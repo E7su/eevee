@@ -1,0 +1,18 @@
+CREATE OR REPLACE VIEW JIRA_READER.V_ISSUES AS
+  SELECT
+    j.ID      ID,
+    p.PNAME   Project,
+    t.ID      "Issue Type ID",
+    j.SUMMARY Summary,
+    o2.ID     "Issue Size ID"
+  FROM jira.JIRAISSUE j
+    LEFT JOIN jira.PROJECT p ON (p.ID = j.PROJECT)
+    LEFT JOIN jira.ISSUETYPE t ON (t.id = j.ISSUETYPE)
+    LEFT JOIN jira.CUSTOMFIELDVALUE c2 ON (c2.ISSUE = j.ID AND c2.CUSTOMFIELD = 12484)
+    LEFT JOIN jira.CUSTOMFIELDOPTION o2 ON (TO_CHAR(o2.ID) = c2.STRINGVALUE);
+
+COMMENT ON COLUMN V_ISSUES.ID IS 'ID';
+COMMENT ON COLUMN V_ISSUES.Project IS 'Проект';
+COMMENT ON COLUMN V_ISSUES."Issue Type ID" IS 'ID типа задачи';
+COMMENT ON COLUMN V_ISSUES.Summary IS 'Название';
+COMMENT ON COLUMN V_ISSUES."Issue Size ID" IS 'ID размера задачи';
