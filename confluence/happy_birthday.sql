@@ -32,6 +32,6 @@ p.PKEY = 'EMP'
 ) s
 where
 s."Статус" = 'Open'
-and s."Подразделение" = 'УРПИПр'
+and s."Подразделение" = 'X-MEN'
 and MOD(MONTHS_BETWEEN(CURRENT_DATE, s."День рождения"), 12) > 10
 order by MOD(MONTHS_BETWEEN(CURRENT_DATE, s."День рождения"), 12) desc
