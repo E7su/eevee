@@ -20,7 +20,7 @@ and c2.DATEVALUE >= CURRENT_DATE --вытаскиваем все отсутст�
 and c1.DATEVALUE < add_months(CURRENT_DATE, 1)
 order by 1,2
 
-Истечение доступа в сеть банка
+-- Истечение доступа в сеть банка
 select
 j.SUMMARY "ФИО",
 to_char(c1.DATEVALUE, 'dd.mm.yyyy') "Дата истечения"
