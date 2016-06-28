@@ -8,7 +8,7 @@ IS
   CURSOR cur (c_year_st VARCHAR2, c_month_st VARCHAR2, c_fio VARCHAR2, c_proj VARCHAR2, c_reg VARCHAR2, c_dep VARCHAR2)
   IS
     SELECT dat.fio "Ф.И.О.",
-           '<span style="background-color:' || CASE dat.reason
+           '<span style="background-color:' || CASE dat.REASON_ID
                                                WHEN '13040' THEN 'GreenYellow' -- Отпуск
                                                WHEN '13041' THEN 'blue'        -- Отгул
                                                WHEN '13042' THEN 'red'         -- Болезнь
@@ -25,7 +25,7 @@ IS
     FROM
       (SELECT v.FIO,
          dd.d AS startdate,
-         v.REASON,
+         v.REASON_ID,
          v.ISSUENUM,
          emp."ФИО",
          emp."Подразделение",
@@ -39,7 +39,7 @@ IS
          JOIN V_EMPLOYEES_FULL emp ON (emp."ФИО" = v.fio
                                        AND (c_fio IS NULL
                                             OR REGEXP_LIKE (lower(emp."ФИО"), lower(c_fio)))
-                                       AND (p_proj  IS NULL
+                                       AND (c_proj  IS NULL
                                             OR (REGEXP_LIKE (emp."Проекты", c_proj )))-- REGEXP_LIKE ищет вхождение подстроки в строку
                                        AND (c_reg IS NULL
                                             OR emp."Оформление" = c_reg)
@@ -60,15 +60,3 @@ IS
     END LOOP;
     RETURN;
   END;
-
-
-
-/*
-SELECT t.*
-FROM
-  (
-    SELECT * FROM TABLE (REP_VACATIONS('2016','06','','','',''))
-  ) pivot(max(reason)
-      FOR rn IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31)) t
-ORDER BY 1;
-*/
