@@ -90,9 +90,9 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
       (SELECT
          v.FIO FIO,
          d     VACATION_DAY,
-         REASON_ID,
+         v.REASON_CODE,
          0     WORK_TRIGGER -- если сотрудник отсутствует и не работает из дома, то = 0
-       FROM V_VACATION_REASONS v
+       FROM V_VACATIONS v
          LEFT JOIN (
                      SELECT TRUNC(to_date('2016-01-01', 'yyyy-mm-dd') + rownum - 1) d
                      FROM dual
@@ -101,7 +101,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
          JOIN jira.jiraISSUE iss ON (
            iss.ISSUENUM = v.issuenum
            AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
-       WHERE v.REASON_ID != 'Работа из дома')
+         JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_CODE AND vr.IS_WORKING_DAY = 1)
+        )
         ON EMPLOYEE = FIO AND DAY = VACATION_DAY
       LEFT JOIN V_CALENDAR_CELEBRATION vc ON to_char(to_date(vc.DAT, 'yyyy-mm-dd')) = to_char(DAY)
   )
