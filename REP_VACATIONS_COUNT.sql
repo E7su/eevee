@@ -36,7 +36,7 @@ IS
                     SELECT DISTINCT
                       fio,
                       d vacation_day
-                    FROM V_VACATION_REASONS v
+                    FROM V_VACATIONS v
                       LEFT JOIN (
                                   SELECT TRUNC(to_date(c_year_st||'-'||'01'||'-01', 'yyyy-mm-dd') + rownum - 1) d
                                   FROM dual
@@ -46,9 +46,8 @@ IS
                       JOIN jira.jiraISSUE iss ON (
                         iss.issuenum = v.issuenum
                         AND iss.issuestatus IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
-
-
-                    WHERE v.reason_id = 'Отпуск') vac
+                      JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_ID)
+                    WHERE vr.VALUE = 'Отпуск') vac
           ON emp.ФИО = vac.fio
 
       WHERE (c_fio IS NULL OR (lower(emp.ФИО) LIKE '%' || lower(c_fio) || '%'))
