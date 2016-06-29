@@ -17,7 +17,9 @@ CREATE OR REPLACE FORCE VIEW JIRA_READER.V_VACATIONS AS
     LEFT JOIN jira.CUSTOMFIELDVALUE c5 ON (c5.ISSUE = j.ID AND c5.CUSTOMFIELD = 12871) -- Vacation Reason
     LEFT JOIN jira.CUSTOMFIELDOPTION o5 ON (c5.STRINGVALUE = TO_CHAR(o5.ID))
     LEFT JOIN jira.CWD_USER u1 ON (lower(j.REPORTER) = u1.LOWER_USER_NAME)
-    LEFT JOIN jira.CWD_USER u2 ON (u2.LOWER_EMAIL_ADDRESS LIKE lower(j.REPORTER || '@%')); --не все пользователи ищутся по LOWER_USER_NAME, пробуем найти по email
+    LEFT JOIN jira.CWD_USER u2 ON (u2.LOWER_EMAIL_ADDRESS LIKE lower(j.REPORTER || '@%')) --не все пользователи ищутся по LOWER_USER_NAME, пробуем найти по email
+  WHERE
+    j.issuestatus IN (10015, 11507, 11705); -- Done, Confirmation, Planning
 
 
 COMMENT ON COLUMN V_VACATIONS.FIO IS 'ФИО';
