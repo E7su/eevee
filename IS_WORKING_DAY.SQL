@@ -2,17 +2,13 @@
 -- Date of creation:  28.06.2016
 -- Description:       Function to determine the working days
 
-CREATE OR REPLACE TYPE IS_WORKING_DAY_TY IS OBJECT (DAT VARCHAR2(255), IS_WORKING_DAY INTEGER);
-CREATE OR REPLACE TYPE IS_WORKING_DAY_TBL_TY IS TABLE OF IS_WORKING_DAY_TY;
-
-CREATE OR REPLACE FUNCTION IS_WORKING_DAY(p_year_st VARCHAR2, p_month_st VARCHAR2, p_day_st VARCHAR2)
-  RETURN IS_WORKING_DAY_TBL_TY
-PIPELINED
+CREATE OR REPLACE FUNCTION IS_WORKING_DAY(p_date_st DATE)
+  RETURN NUMBER
 IS
-  CURSOR cur (c_year_st VARCHAR2, c_month_st VARCHAR2, c_day_st VARCHAR2)
+  res NUMBER;
+  CURSOR cur (c_date_st DATE)
   IS
     SELECT
-      w.DAT,
       -- последовательно проверяем до тех пор, пока не получим не нулловое значение:
       -- 0. праздник ли это, если да, то == 0, else <null>
       -- 1. если из-за переноса праздника выходной день стал рабочим, то == 1, else <null>
@@ -37,13 +33,13 @@ IS
        FROM
          (SELECT *
           FROM V_CALENDAR_CELEBRATION) vc
-         RIGHT JOIN (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-' || c_day_st, 'yyyy-mm-dd')) d
+         RIGHT JOIN (SELECT TRUNC(c_date_st) d
                      FROM dual) dd ON to_date(vc.DAT, 'yyyy-mm-dd') = TRUNC(dd.d)
        ORDER BY 1) w;
   BEGIN
-    FOR rec IN cur (p_year_st, p_month_st, p_day_st)
-    LOOP
-      PIPE ROW (IS_WORKING_DAY_TY(rec.DAT, rec.IS_WORKING_DAY));
-    END LOOP;
-    RETURN;
+    OPEN cur (p_date_st);
+    FETCH cur INTO res;
+    CLOSE cur;
+
+    RETURN res;
   END;
