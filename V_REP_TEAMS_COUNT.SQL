@@ -8,24 +8,23 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
       -- для упрощения понимания состояния триггеров:
       -- 1 == человек работал
       -- 0 == не работал
-      EMPLOYEE,
-      DAY,
-      TEAM,
-      CELEBRATION_TRIGGER,
+
+      w1.EMPLOYEE,
+      w1.DAY,
+      w1.TEAM,
       -- триггер праздника (если праздник, то 0)
       -- если не праздник, то <null>
-      WORK_TRIGGER,
+      vc.CELEBRATION_TRIGGER,
       -- если сотрудник отсутсвует и не работает из дома, то 0, в остальных случаях -- <null> // для применения coalesce
-      CARRY_TRIGGER,
+      w2.WORK_TRIGGER,
       -- триггер переноса рабочего дня на выходной
       -- если перенос произошёл, то 1
       -- если нет переноса -- <null>
-      WEEKDAY_TRIGGER,
+      vc.CARRY_TRIGGER,
       -- триггер будних дней (выходной 0, else 1)
-      REGEXP_COUNT(TEAM_TMP, ',') + 1   COUNT_TEAMS,
+      w1.WEEKDAY_TRIGGER,
       -- количество команд
-      COALESCE(CELEBRATION_TRIGGER, TO_CHAR(WORK_TRIGGER), CARRY_TRIGGER, TO_CHAR(WEEKDAY_TRIGGER)) /
-      (REGEXP_COUNT(TEAM_TMP, ',') + 1) WORKED_DAY_PERCENT
+      REGEXP_COUNT(TEAM_TMP, ',') + 1   COUNT_TEAMS,
     -- последовательно проверяем до тех пор, пока не получим не нулловое значение:
     -- 0. праздник ли это, если да, то при вычислении формулы процент участия сотрудника в командах будет 0,
     --    ибо 0/team_count == 0
@@ -34,6 +33,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
     -- 2. если из-за переноса праздника выходной день стал рабочим, то == 1, вычислится значение в этот день,
     --    в противном случае <null>
     -- 3. в случае если в трёх предыдущих триггерах <null> результат берём из триггера будних дней: в выходные 0, else 1
+      COALESCE(CELEBRATION_TRIGGER, TO_CHAR(WORK_TRIGGER), CARRY_TRIGGER, TO_CHAR(WEEKDAY_TRIGGER)) /
+      (REGEXP_COUNT(TEAM_TMP, ',') + 1) WORKED_DAY_PERCENT
     FROM
       (SELECT
          e.SUMMARY                                                      EMPLOYEE,
@@ -85,12 +86,12 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
                        CONNECT BY instr(tcc.TEAMS, ',', 1, LEVEL - 1) > 0
                      ) AS SYS.odciNumberList)) lines,
          V_EMPLOYEES e
-       WHERE e.ID = tcc.EMPLOYEE_ID)
+       WHERE e.ID = tcc.EMPLOYEE_ID) w1
       LEFT JOIN
       (SELECT
          v.FIO FIO,
          d     VACATION_DAY,
-         v.REASON_CODE,
+         v.REASON_ID,
          0     WORK_TRIGGER -- если сотрудник отсутствует и не работает из дома, то = 0
        FROM V_VACATIONS v
          LEFT JOIN (
@@ -98,11 +99,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
                      FROM dual
                      CONNECT BY rownum <= TRUNC(current_date) - TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')) + 1) dd
            ON (dd.d >= TRUNC(v.DATE_START) AND dd.d <= TRUNC(v.DATE_END))
-         JOIN jira.jiraISSUE iss ON (
-           iss.ISSUENUM = v.issuenum
-           AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
-         JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_CODE AND vr.IS_WORKING_DAY = 1)
-        )
-        ON EMPLOYEE = FIO AND DAY = VACATION_DAY
+         JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_ID AND vr.IS_WORKING_DAY = 1)
+        ) w2
+        ON w1.EMPLOYEE = w2.FIO AND w1.DAY = w2.VACATION_DAY
       LEFT JOIN V_CALENDAR_CELEBRATION vc ON to_char(to_date(vc.DAT, 'yyyy-mm-dd')) = to_char(DAY)
   )
