@@ -46,9 +46,7 @@ IS
                                        AND (c_dep IS NULL
                                             OR emp."Подразделение" = c_dep)
            )
-         JOIN jira.jiraISSUE
-           ON jira.jiraISSUE.issuenum = v.issuenum
-       WHERE  jira.jiraISSUE.issuestatus in (10015, 11507, 11705) and jira.jiraISSUE.PROJECT = 12883) dat     -- Done, Confirmation, Planning
+      ) dat
 
     WHERE fio IS NOT NULL
           AND startdate IS NOT NULL;
