@@ -43,9 +43,6 @@ IS
                                   CONNECT BY rownum <= TRUNC(to_date(c_year_end||'-'||'12'||'-31', 'yyyy-mm-dd')) -
                                                        TRUNC(to_date(c_year_st||'-'||'01'||'-01', 'yyyy-mm-dd')) + 1) dd
                         ON (dd.d >= TRUNC(v.DATE_START) AND dd.d <= TRUNC(v.DATE_END))
-                      JOIN jira.jiraISSUE iss ON (
-                        iss.issuenum = v.issuenum
-                        AND iss.issuestatus IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
                       JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_ID)
                     WHERE vr.VALUE = 'Отпуск') vac
           ON emp.ФИО = vac.fio
