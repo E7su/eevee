@@ -12,24 +12,19 @@ IS
   IS
     SELECT DISTINCT
       dat.fio                     "Ф.И.О.",
-      dat.reason_id AS            reason,
+      dat.REASON AS            reason,
       extract(DAY
               FROM dat.startdate) rn
     FROM
       (SELECT
          v.FIO,
          dd.d AS startdate,
-         v.REASON_ID,
+         vr.VALUE REASON,
          emp."ФИО",
          emp."Подразделение",
          emp."Оформление"
 
-       FROM V_VACATION_REASONS v
-         JOIN jira.jiraISSUE iss ON (
-           iss.issuenum = v.issuenum
-           AND iss.issuestatus IN (10015, 11507, 11705))
-         -- Done, Confirmation, Planning
-
+       FROM V_VACATIONS v
          LEFT JOIN (
                      SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-' || c_day_st, 'yyyy-mm-dd') + rownum -
                                   1) d -- дата начала
@@ -41,6 +36,7 @@ IS
 
          JOIN V_EMPLOYEES_SHORT emp ON (
            emp."ФИО" = v.fio)
+        JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_ID)
       ) dat
     WHERE fio IS NOT NULL
           AND startdate IS NOT NULL
