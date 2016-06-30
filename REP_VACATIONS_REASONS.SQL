@@ -17,14 +17,14 @@ IS
               FROM dat.startdate) rn
     FROM
       (SELECT
-         v.FIO,
+         vc.FIO,
          dd.d AS startdate,
          vr.VALUE REASON,
          emp."ФИО",
          emp."Подразделение",
          emp."Оформление"
 
-       FROM V_VACATIONS v
+       FROM V_VACATIONS_CHANGES vc
          LEFT JOIN (
                      SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-' || c_day_st, 'yyyy-mm-dd') + rownum -
                                   1) d -- дата начала
@@ -32,11 +32,11 @@ IS
                      CONNECT BY rownum <=
                                 TRUNC(to_date(c_year_end || '-' || c_month_end || '-' || c_day_end, 'yyyy-mm-dd')) -
                                 TRUNC(to_date(c_year_st || '-' || c_month_st || '-' || c_day_st, 'yyyy-mm-dd')) + 1
-                   ) dd ON (dd.d >= TRUNC(v.DATE_START) AND dd.d <= TRUNC(v.DATE_END))
+                   ) dd ON (dd.d >= TRUNC(vc.DATE_START) AND dd.d <= TRUNC(vc.DATE_END))
 
          JOIN V_EMPLOYEES_SHORT emp ON (
-           emp."ФИО" = v.fio)
-        JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_ID)
+           emp."ФИО" = vc.fio)
+        JOIN V_VACATIONS_REASONS vr ON (vr.ID = vc.REASON_ID)
       ) dat
     WHERE fio IS NOT NULL
           AND startdate IS NOT NULL
