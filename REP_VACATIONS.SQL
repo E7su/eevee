@@ -57,7 +57,6 @@ IS
                                                       OR emp."Подразделение" = c_dep)
                      )
                 ) dat
-              WHERE fio IS NOT NULL
             ) vc
               RIGHT JOIN
             (SELECT
