@@ -36,14 +36,14 @@ IS
                     SELECT DISTINCT
                       fio,
                       d vacation_day
-                    FROM V_VACATIONS v
+                    FROM V_VACATIONS_CHANGES vc
                       LEFT JOIN (
                                   SELECT TRUNC(to_date(c_year_st||'-'||'01'||'-01', 'yyyy-mm-dd') + rownum - 1) d
                                   FROM dual
                                   CONNECT BY rownum <= TRUNC(to_date(c_year_end||'-'||'12'||'-31', 'yyyy-mm-dd')) -
                                                        TRUNC(to_date(c_year_st||'-'||'01'||'-01', 'yyyy-mm-dd')) + 1) dd
-                        ON (dd.d >= TRUNC(v.DATE_START) AND dd.d <= TRUNC(v.DATE_END))
-                      JOIN V_VACATIONS_REASONS vr ON (vr.ID = v.REASON_ID)
+                        ON (dd.d >= TRUNC(vc.DATE_START) AND dd.d <= TRUNC(vc.DATE_END))
+                      JOIN V_VACATIONS_REASONS vr ON (vr.ID = vc.REASON_ID)
                     WHERE vr.VALUE = 'Отпуск') vac
           ON emp.ФИО = vac.fio
 
