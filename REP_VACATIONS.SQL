@@ -65,11 +65,11 @@ IS
                      FROM dd.d) RN,
                                 IS_WORKING_DAY(dd.d) IS_WORK_DAY
                                                      FROM
-            (SELECT TRUNC(to_date('2016' || '-' || '01' || '-01', 'yyyy-mm-dd') + rownum - 1) d
-                                                                                              FROM dual
-                                                                                              CONNECT BY rownum <=
-                                                                                              CAST(to_char(LAST_DAY(
-              to_date('2016' || '-' || '01' || '-01', 'yyyy-mm-dd')), 'dd') AS INT)) dd
+            (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
+                                                                                                       FROM dual
+                                                                                                       CONNECT BY rownum <=
+                                                                                                       CAST(to_char(LAST_DAY(
+              to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')), 'dd') AS INT)) dd
             ) dat
               ON 1 = 1)  -- размножаем даты на каждого сотрудника
          ) iwd
@@ -109,9 +109,7 @@ IS
                           FROM dual
                           CONNECT BY rownum <=
                                      CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')),
-                                                  'dd')
-                                          AS
-                                          INT)) dd
+                                                  'dd') AS INT)) dd
                            ON (dd.d >= TRUNC(v.DATE_START)
                                AND dd.d <= TRUNC(v.DATE_END))) dat
                    ) vr
