@@ -40,11 +40,12 @@ FROM
               dd.d                 dat
             FROM V_EMPLOYEES v
               JOIN
-              (SELECT TRUNC(to_date(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
+              (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
                FROM dual
                CONNECT BY rownum <=
                           CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')), 'dd') AS
                                INT)) dd ON 1 = 1
+          --  WHERE v.SUMMARY = 'Нгуен Туан Вьет' --TODO убрать
            ) dat
         ) iwd
         LEFT JOIN (SELECT
@@ -89,7 +90,7 @@ FROM
                                                            OR emp."Подразделение" = c_dep)
                           )
                         LEFT JOIN
-                        (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
+                        (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st|| '-01', 'yyyy-mm-dd') + rownum - 1) d
                          FROM dual
                          CONNECT BY rownum <=
                                     CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')), 'dd')
