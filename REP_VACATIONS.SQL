@@ -31,12 +31,12 @@ FROM
         (SELECT DISTINCT
            dat.FIO,
            extract(DAY
-                   FROM dat.dat) RN,
+                   FROM dat.dat) RN, -- день месяца
            dat.IS_WORK_DAY
          FROM
            (SELECT
               v.SUMMARY            FIO,
-              IS_WORKING_DAY(dd.d) IS_WORK_DAY,
+              IS_WORKING_DAY(dd.d) IS_WORK_DAY, -- обогащение функцией с датами выходных и будних дней
               dd.d                 dat
             FROM V_EMPLOYEES v
               JOIN
@@ -44,15 +44,14 @@ FROM
                FROM dual
                CONNECT BY rownum <=
                           CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')), 'dd') AS
-                               INT)) dd ON 1 = 1
-          --  WHERE v.SUMMARY = 'Нгуен Туан Вьет' --TODO убрать
+                               INT)) dd ON 1 = 1 -- множим даты на всех сотрудников
            ) dat
         ) iwd
         LEFT JOIN (SELECT
                      dat.FIO,
                      extract(DAY
-                             FROM dat.STARTDATE) RN,
-                     REASON
+                             FROM dat.STARTDATE) RN, -- день месяца
+                     REASON -- причина отсутствия
                    FROM
                      (SELECT
                         v.FIO,
