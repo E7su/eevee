@@ -10,20 +10,20 @@ IS
   IS
     SELECT
       t.FIO,
-      -- номер дня месяца
+      -- РЅРѕРјРµСЂ РґРЅСЏ РјРµСЃСЏС†Р°
       t.RN,
-      -- отображение причины в confluence html (цвет стикера/фона ячейки)
-      -- если нет причины отсутствия, то проверяем, не выходной ли это
+      -- РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРёС‡РёРЅС‹ РІ confluence html (С†РІРµС‚ СЃС‚РёРєРµСЂР°/С„РѕРЅР° СЏС‡РµР№РєРё)
+      -- РµСЃР»Рё РЅРµС‚ РїСЂРёС‡РёРЅС‹ РѕС‚СЃСѓС‚СЃС‚РІРёСЏ, С‚Рѕ РїСЂРѕРІРµСЂСЏРµРј, РЅРµ РІС‹С…РѕРґРЅРѕР№ Р»Рё СЌС‚Рѕ
       coalesce(t.REASON, t.HOLIDAY) REASON
     FROM
       (SELECT
          f.FIO,
          f.RN,
-         -- триггер отсутствий (отпуск/отгул... 1, работа из дома 0)
+         -- С‚СЂРёРіРіРµСЂ РѕС‚СЃСѓС‚СЃС‚РІРёР№ (РѕС‚РїСѓСЃРє/РѕС‚РіСѓР»... 1, СЂР°Р±РѕС‚Р° РёР· РґРѕРјР° 0)
          f.REASON,
          f.IS_WORK_DAY,
-         CASE WHEN IS_WORK_DAY = '0' -- если выходной
-           THEN '<tr style="background-color:grey">' -- то ячейка серая
+         CASE WHEN IS_WORK_DAY = '0' -- РµСЃР»Рё РІС‹С…РѕРґРЅРѕР№
+           THEN '<tr style="background-color:grey">' -- С‚Рѕ СЏС‡РµР№РєР° СЃРµСЂР°СЏ
          END HOLIDAY
        FROM
          (SELECT
@@ -34,42 +34,42 @@ IS
           FROM
             (SELECT DISTINCT
                dat.FIO,
-               -- день месяца
+               -- РґРµРЅСЊ РјРµСЃСЏС†Р°
                extract(DAY
                        FROM dat.dat) RN,
                dat.IS_WORK_DAY
              FROM
                (SELECT
                   v.SUMMARY            FIO,
-                  -- обогащение функцией с датами выходных и будних дней
+                  -- РѕР±РѕРіР°С‰РµРЅРёРµ С„СѓРЅРєС†РёРµР№ СЃ РґР°С‚Р°РјРё РІС‹С…РѕРґРЅС‹С… Рё Р±СѓРґРЅРёС… РґРЅРµР№
                   IS_WORKING_DAY(dd.d) IS_WORK_DAY,
                   dd.d                 dat
                 FROM V_EMPLOYEES v
-                  JOIN V_EMPLOYEES_FULL emp ON (emp."ФИО" = v.SUMMARY
+                  JOIN V_EMPLOYEES_FULL emp ON (emp."Р¤РРћ" = v.SUMMARY
                                                 AND (c_fio IS NULL
-                                                     OR REGEXP_LIKE(lower(emp."ФИО"), lower(c_fio)))
+                                                     OR REGEXP_LIKE(lower(emp."Р¤РРћ"), lower(c_fio)))
                                                 AND (c_proj IS NULL
-                                                     OR (REGEXP_LIKE(emp."Проекты", c_proj)))
-                                                -- REGEXP_LIKE ищет вхождение подстроки в строку
+                                                     OR (REGEXP_LIKE(emp."РџСЂРѕРµРєС‚С‹", c_proj)))
+                                                -- REGEXP_LIKE РёС‰РµС‚ РІС…РѕР¶РґРµРЅРёРµ РїРѕРґСЃС‚СЂРѕРєРё РІ СЃС‚СЂРѕРєСѓ
                                                 AND (c_reg IS NULL
-                                                     OR emp."Оформление" = c_reg)
+                                                     OR emp."РћС„РѕСЂРјР»РµРЅРёРµ" = c_reg)
                                                 AND (c_dep IS NULL
-                                                     OR emp."Подразделение" = c_dep)
+                                                     OR emp."РџРѕРґСЂР°Р·РґРµР»РµРЅРёРµ" = c_dep)
                     )
                   JOIN
                   (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
                    FROM dual
                    CONNECT BY rownum <=
-                              CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')), 'dd') AS
-                                   INT)) dd ON 1 = 1 -- множим даты на всех сотрудников
+                              CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd')), 'dd') AS
+                                   INT)) dd ON 1 = 1 -- РјРЅРѕР¶РёРј РґР°С‚С‹ РЅР° РІСЃРµС… СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ
                ) dat
             ) iwd
             LEFT JOIN (SELECT
                          dat.FIO,
-                         -- день месяца
+                         -- РґРµРЅСЊ РјРµСЃСЏС†Р°
                          extract(DAY
                                  FROM dat.STARTDATE) RN,
-                         REASON -- причина отсутствия
+                         REASON -- РїСЂРёС‡РёРЅР° РѕС‚СЃСѓС‚СЃС‚РІРёСЏ
                        FROM
                          (SELECT
                             v.FIO,
@@ -77,19 +77,19 @@ IS
                             v.REASON_ID,
                             '<span style="background-color:' || CASE v.REASON_ID
                                                                 WHEN '13040'
-                                                                  THEN 'GreenYellow' -- Отпуск
+                                                                  THEN 'GreenYellow' -- РћС‚РїСѓСЃРє
                                                                 WHEN '13041'
-                                                                  THEN 'blue' -- Отгул
+                                                                  THEN 'blue' -- РћС‚РіСѓР»
                                                                 WHEN '13042'
-                                                                  THEN 'red' -- Болезнь
+                                                                  THEN 'red' -- Р‘РѕР»РµР·РЅСЊ
                                                                 WHEN '13043'
-                                                                  THEN 'grey' -- Работа из дома
+                                                                  THEN 'grey' -- Р Р°Р±РѕС‚Р° РёР· РґРѕРјР°
                                                                 WHEN '13044'
-                                                                  THEN 'cyan' -- Командировка
+                                                                  THEN 'cyan' -- РљРѕРјР°РЅРґРёСЂРѕРІРєР°
                                                                 WHEN '13045'
-                                                                  THEN 'cyan' -- Обучение
+                                                                  THEN 'cyan' -- РћР±СѓС‡РµРЅРёРµ
                                                                 WHEN '13046'
-                                                                  THEN 'cyan' -- Конференция
+                                                                  THEN 'cyan' -- РљРѕРЅС„РµСЂРµРЅС†РёСЏ
                                                                 ELSE 'Medium'
                                                                 END || '"/>' || '<a href="http://jira/browse/VAC-' ||
                             v.ISSUENUM || '">' || '__' || '</a>' REASON,
@@ -99,7 +99,7 @@ IS
                             (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
                              FROM dual
                              CONNECT BY rownum <=
-                                        CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || '01' || '-01', 'yyyy-mm-dd')),
+                                        CAST(to_char(LAST_DAY(to_date(c_year_st || c_month_st || '01' || '-01', 'yyyy-mm-dd')),
                                                      'dd')
                                              AS
                                              INT)) dd
