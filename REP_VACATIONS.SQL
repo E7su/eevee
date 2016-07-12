@@ -1,4 +1,5 @@
-CREATE OR REPLACE TYPE VACATION_TY IS OBJECT (FIO VARCHAR2(255), REASON VARCHAR2(255), RN INTEGER);
+CREATE OR REPLACE TYPE VACATION_TY IS OBJECT (FIO    VARCHAR2(255), DAT VARCHAR2(255), IS_WORKING_DAY VARCHAR2(255),
+                                              REASON VARCHAR2(255), ISSUENUM VARCHAR2(255), COLOR VARCHAR2(255));
 CREATE OR REPLACE TYPE VACATION_TBL_TY IS TABLE OF VACATION_TY;
 
 CREATE OR REPLACE FUNCTION REP_VACATIONS(p_year_st VARCHAR2, p_month_st VARCHAR2, p_fio VARCHAR2, p_proj VARCHAR2,
@@ -8,91 +9,100 @@ PIPELINED
 IS
   CURSOR cur (c_year_st VARCHAR2, c_month_st VARCHAR2, c_fio VARCHAR2, c_proj VARCHAR2, c_reg VARCHAR2, c_dep VARCHAR2)
   IS
+    WITH dates (D) AS (
+      SELECT TO_DATE('2016-01-01', 'yyyy-mm-dd')
+      FROM dual --start
+      UNION ALL
+      SELECT D + 1 AS day_of_month
+      FROM dates
+      WHERE D < LAST_DAY(D) --end
+    )
     SELECT DISTINCT
-      t.FIO,
-      -- отображение причины в confluence html (цвет стикера/фона ячейки)
-      -- если нет причины отсутствия, то проверяем, не выходной ли это
-      coalesce(t.REASON, t.HOLIDAY) REASON,
-      -- номер дня месяца
-      t.RN
-    FROM
-      (SELECT
-         f.FIO,
-         f.RN,
-         -- триггер отсутствий (отпуск/отгул... 1, работа из дома 0)
-         f.REASON,
-         f.IS_WORK_DAY,
-         CASE WHEN f.IS_WORK_DAY = 0 -- если выходной
-           THEN '<tr style="background-color:grey">' -- то ячейка серая
-         END HOLIDAY
-       FROM
-         (SELECT
-            iwd.FIO,
-            iwd.RN,
-            iwd.IS_WORK_DAY,
-            vc.REASON
+      -- обогащение пары (сотрудник, тек. дата) триггером рабочих дней
+      em.EMPLOYEE                             FIO,
+      em.DAY_CURRENT                          DAT,
+      TO_CHAR(IS_WORKING_DAY(em.DAY_CURRENT)) IS_WORKING_DAY,
+      COALESCE(vv.REASON, '0')
+      vv.REASON,
+      vv.ISSUENUM,
+      vv.ISSUENUM,
+      vv.COLOR
+    FROM (SELECT
+            e."ФИО" EMPLOYEE,
+            dates.D DAY_CURRENT
           FROM
-            (SELECT DISTINCT
-               dat.FIO,
-               -- день месяца
-               extract(DAY
-                       FROM dat.dat) RN,
-               dat.IS_WORK_DAY
-             FROM
-               (SELECT
-                  v.SUMMARY            FIO,
-                  -- обогащение функцией с датами выходных и будних дней
-                  IS_WORKING_DAY(dd.d) IS_WORK_DAY,
-                  dd.d                 dat
-                FROM V_EMPLOYEES v
-                  JOIN V_EMPLOYEES_FULL emp ON (emp."ФИО" = v.SUMMARY
-                                                AND (c_fio IS NULL
-                                                     OR REGEXP_LIKE(lower(emp."ФИО"), lower(c_fio)))
-                                                AND (c_proj IS NULL
-                                                     OR (REGEXP_LIKE(emp."Проекты", c_proj)))
-                                                -- REGEXP_LIKE ищет вхождение подстроки в строку
-                                                AND (c_reg IS NULL
-                                                     OR emp."Оформление" = c_reg)
-                                                AND (c_dep IS NULL
-                                                     OR emp."Подразделение" = c_dep)
-                    )
-                  JOIN
-                  (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
-                   FROM dual
-                   CONNECT BY rownum <=
-                              CAST(to_char(LAST_DAY(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd')),
-                                           'dd') AS INT)) dd ON 1 = 1 -- множим даты на всех сотрудников
-               ) dat
-            ) iwd
-            LEFT JOIN
-            (SELECT
-               dat.FIO,
-               extract(DAY
-                       FROM STARTDATE)                RN,
-               '<span style="background-color:' || vr.COLOR || '"/>' || '<a href="http://jira/browse/VAC-' ||
-               dat.ISSUENUM || '">' || '__' || '</a>' REASON
-             FROM (SELECT
-                     v.FIO,
-                     dd.d AS STARTDATE,
-                     v.REASON_ID,
-                     v.ISSUENUM
-                   FROM V_VACATIONS_CHANGES v
-                     LEFT JOIN
-                     (SELECT TRUNC(to_date(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd') + rownum - 1) d
-                      FROM dual
-                      CONNECT BY rownum <=
-                                 CAST(to_char(LAST_DAY(to_date(c_year_st || '-' ||
-                                                               c_month_st || '-01', 'yyyy-mm-dd')), 'dd') AS INT)) dd
-                       ON (dd.d >= TRUNC(v.DATE_START)
-                           AND dd.d <= TRUNC(v.DATE_END))) dat
-               JOIN V_VACATIONS_REASONS vr ON vr.ID = dat.REASON_ID
-            ) vc
-              ON vc.FIO = iwd.FIO AND vc.RN = iwd.RN) f
-       ORDER BY 1, 2) t;
+            V_EMPLOYEES_FULL e
+            RIGHT JOIN dates ON (1 = 1)
+                                AND c_fio IS NULL
+                                OR REGEXP_LIKE(lower(e."ФИО"), lower(c_fio))
+                                   AND (c_proj IS NULL
+                                        OR (REGEXP_LIKE(e."Проекты", c_proj)))
+                                   -- REGEXP_LIKE ищет вхождение подстроки в строку
+                                   AND (c_reg IS NULL
+                                        OR e."Оформление" = c_reg)
+                                   AND (c_dep IS NULL
+                                        OR e."Подразделение" = c_dep)
+         ) em
+
+      -- получение отсутствий сотрудника
+      LEFT JOIN
+      (SELECT
+         vc.DATE_START,
+         vc.DATE_END,
+         vc.FIO,
+         vr.VALUE,
+         vr.REASON,
+         vr.COLOR
+       FROM
+         V_VACATIONS_CHANGES vc
+         JOIN V_VACATIONS_REASONS vr ON (TO_CHAR(vr.ID) = vc.REASON_ID AND vr.IS_WORKING_DAY = 0) --TODO
+      ) vv ON (TRUNC(em.DAY_CURRENT) >= TRUNC(vv.DATE_START) AND em.DAY_CURRENT <= TRUNC(vv.DATE_END)
+               AND vv.FIO = em.employee)
+  ;
+
   BEGIN
     FOR rec IN cur (p_year_st, p_month_st, p_fio, p_proj, p_reg, p_dep)
     LOOP
-      PIPE ROW (VACATION_TY(rec.FIO, rec.REASON, rec.RN));
+      PIPE ROW (VACATION_TY(rec.FIO, TO_CHAR(rec.DAT), rec.IS_WORKING_DAY, rec.REASON, rec.ISSUENUM, rec.COLOR)); --TODO
     END LOOP;
     RETURN;
   END;
+
+/*
+SELECT t.*
+FROM
+(SELECT
+   fr.EMPLOYEE,
+   fr.RN,
+   -- если выходной, то красим фон ячейки серым,
+   -- а если был заведён отпуск в выходной/праздник, то поверх серого фона рисуем цветной квадратик
+   CASE fr.IS_WORKING_DAY
+   WHEN 0
+     THEN '<tr style="background-color:grey">' || fr.REASON
+   ELSE NULL
+   END REASON
+ FROM (
+        SELECT
+          f.EMPLOYEE,
+          extract(DAY
+                  FROM f.day)                         RN,
+          f.IS_WORKING_DAY,
+          -- если отсутствие, то рисуем цветной квадратик
+          CASE f.REASON
+          WHEN '0'
+            THEN NULL
+          ELSE '<span style="background-color:' || COLOR || '"/>' || '<a href="http://jira/browse/VAC-' ||
+               ISSUENUM || '">' || '__' || '</a>' END REASON
+        FROM (
+               SELECT *
+               FROM TABLE (REP_VACATIONS('', '', '', '', '', ''))
+             ) f
+      ) fr
+)
+ PIVOT (
+   MAX(REASON)
+   FOR RN
+   IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
+ ) t
+ORDER BY 1
+ */
