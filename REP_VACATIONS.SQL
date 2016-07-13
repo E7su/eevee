@@ -22,9 +22,7 @@ IS
       em.EMPLOYEE                             FIO,
       em.DAY_CURRENT                          DAT,
       TO_CHAR(IS_WORKING_DAY(em.DAY_CURRENT)) IS_WORKING_DAY,
-      COALESCE(vv.REASON, '0')
-      vv.REASON,
-      vv.ISSUENUM,
+      COALESCE(vv.REASON, '0') REASON,
       vv.ISSUENUM,
       vv.COLOR
     FROM (SELECT
@@ -50,14 +48,16 @@ IS
          vc.DATE_START,
          vc.DATE_END,
          vc.FIO,
-         vr.VALUE,
-         vr.REASON,
+         vc.ISSUENUM,
+         vr.VALUE REASON,
          vr.COLOR
        FROM
          V_VACATIONS_CHANGES vc
          JOIN V_VACATIONS_REASONS vr ON (TO_CHAR(vr.ID) = vc.REASON_ID AND vr.IS_WORKING_DAY = 0) --TODO
-      ) vv ON (TRUNC(em.DAY_CURRENT) >= TRUNC(vv.DATE_START) AND em.DAY_CURRENT <= TRUNC(vv.DATE_END)
-               AND vv.FIO = em.employee)
+      ) vv ON (vv.FIO = em.employee)
+  WHERE
+    em.DAY_CURRENT >= TRUNC(vv.DATE_START) AND
+    em.DAY_CURRENT <= TRUNC(vv.DATE_END)
   ;
 
   BEGIN
