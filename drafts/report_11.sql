@@ -7,18 +7,21 @@
 
 --------------------------------------------//11//---------------------------------------------
 SELECT
-  p.pname                               "Команда",
-  it.pname                              "Тип",
-  TRUNC(AVG(cg.created - j.created), 2) "Длит-ть задачи"
+  tp.TEAM           "Команда",
+  vs.VALUE          "Размер задачи",
+  COUNT(j.ISSUENUM) "Количество issue"
 FROM JIRA.JIRAISSUE j
-  JOIN jira.project p ON j.project = p.id
-  JOIN jira.issuetype it ON j.issuetype = it.id
-  JOIN jira.changegroup cg ON (cg.issueid = j.id)
-  JOIN jira.changeitem ci ON (ci.groupid = cg.id)
-WHERE it.pname IN ('User Story', 'Bug', 'Task')
-      AND TRUNC(j.created) >= TRUNC(to_date('$year_st-$month_st-$day_st', 'yyyy-mm-dd'))
-      AND TRUNC(cg.created) <= TRUNC(to_date('$year_end-$month_end-$day_end', 'yyyy-mm-dd'))
-      AND p.pname = '$team' AND it.pname = '$type'
-      AND ci.field = 'status' AND to_char(newstring) = 'Done'
-GROUP BY p.pname, it.pname
-ORDER BY 1
+  JOIN jira.PROJECT p ON j.PROJECT = p.ID
+  JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
+  JOIN jira.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
+  JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
+  JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
+  JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
+  JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
+WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWSTRING) = 'Done'
+      AND TRUNC(j.CREATED) >= TRUNC(TO_DATE('$year_st-$month_st-01', 'yyyy-mm-dd'))
+      AND TRUNC(cg.CREATED) <= TRUNC(ADD_MONTHS(TO_DATE('$year_st-$month_st-01', 'yyyy-mm-dd'), 1))
+      AND ('$team' IS NULL OR tp.TEAM = '$team')
+      AND ('$size' IS NULL OR vs.VALUE = '$size')
+GROUP BY tp.TEAM, vs.VALUE
+ORDER BY 1, 2 DESC
