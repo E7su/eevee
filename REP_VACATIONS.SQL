@@ -72,30 +72,31 @@ FROM
   (SELECT
      fr.FIO,
      fr.RN,
+     -- если был заведён отпуск в выходной/праздник, то светло-серый квадратик и ссылка на причину отсутствия
      CASE fr.IS_WORKING_DAY
      WHEN 0
-       THEN '<tr style="background-color:grey">' || fr.REASON
-     -- если выходной, то красим фон ячейки серым,
-     -- а если был заведён отпуск в выходной/праздник, то поверх серого фона рисуем цветной квадратик
-     ELSE fr.REASON
+       THEN '<font  color="#FFFFFF"><span style="background-color:#DCDCDC"/>' || fr.REASON -- светло-серый
+     ELSE '<span style="background-color:' || fr.COLOR || '"/>' || fr.REASON -- цветной
      END REASON
    FROM (
           SELECT
             f.FIO,
             extract(DAY
-                    FROM f.DAT)                           RN,
+                    FROM f.DAT) RN,
             f.IS_WORKING_DAY,
+            f.COLOR,
             -- если отсутствие, то рисуем цветной квадратик
             CASE f.REASON
             WHEN '0'
               THEN NULL
-            ELSE '<span style="background-color:' || f.COLOR || '"/>' || '<a href="http://jira/browse/VAC-' ||
-                 f.ISSUENUM || '">' || '__' || '</a>' END REASON
+            ELSE '<a href="http://jira/browse/VAC-' || f.ISSUENUM || '">' || '<font  color="#FFFFFF">__' || '</a>'
+            END                 REASON
           FROM (
                  SELECT *
-                 FROM TABLE (REP_VACATIONS('2016', '02', '', '', '', ''))
+                 FROM TABLE (REP_VACATIONS('$year_st', '$month_st', '$fio', '$proj', '$reg', '$dep'))
                ) f
         ) fr
+   WHERE REASON IS NOT NULL
   )
    PIVOT (
      MAX(REASON)
