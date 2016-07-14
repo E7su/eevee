@@ -1,8 +1,9 @@
-﻿-- Date of creation:  19.05.2016
+-- Author:            Polina Azarova
+-- Date of creation:  19.05.2016
 -- Description:       X-MEN HEADERS vacation
 
 SELECT
-  fio     ФИО,
+  FIO     ФИО,
   "1",
   "2",
   "3",
@@ -20,22 +21,22 @@ FROM
   (SELECT *
    FROM (
      SELECT
-       fio,
+       FIO,
        RN,
        LISTAGG(HOLIDAY, ', ')
        WITHIN GROUP (
-         ORDER BY holiday_order) HOLIDAY
+         ORDER BY HOLIDAY_ORDER) HOLIDAY
      --        regexp_replace(LISTAGG(HOLIDAY, ', ')
      --                       WITHIN GROUP (
      --                         ORDER BY holiday), '([^,]+)(,\1)?+', '\1') HOLIDAY  -- удаляем повторы в датах
      FROM
        (SELECT
-          ROWNUM holiday_order,
-          fio,
+          ROWNUM HOLIDAY_ORDER,
+          FIO,
           RN,
           HOLIDAY
         FROM (SELECT
-                fio,
+                FIO,
                 RN,
                 CASE END_DAY
                 WHEN START_DAY
@@ -45,23 +46,22 @@ FROM
               FROM
                 (
                   SELECT
-                    fio,
-                    extract(DAY FROM vac.DATE_END)     END_DAY,
-                    extract(DAY FROM vac.DATE_START)   START_DAY,
-                    extract(MONTH FROM vac.DATE_START) RN
+                    FIO,
+                    EXTRACT(DAY FROM vac.DATE_END)     END_DAY,
+                    EXTRACT(DAY FROM vac.DATE_START)   START_DAY,
+                    EXTRACT(MONTH FROM vac.DATE_START) RN
                   FROM V_EMPLOYEES_SHORT emp
                     LEFT JOIN (
                                 SELECT DISTINCT
-                                  fio,
+                                  FIO,
                                   v.DATE_START,
                                   v.DATE_END
-                                FROM V_VACATION_REASONS v
-                                  JOIN jira.jiraISSUE iss ON (
-                                    iss.issuenum = v.issuenum
-                                    AND iss.issuestatus IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
-                                WHERE v.reason_id = 'Отпуск') vac
-                      ON emp.ФИО = vac.fio
-
+                                FROM V_VACATIONS_CHANGES v
+                                  JOIN jira.JIRAISSUE iss ON (
+                                    iss.ISSUENUM = v.ISSUENUM
+                                    AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
+                                WHERE v.REASON_ID = '13040') vac
+                      ON emp.ФИО = vac.FIO
                   WHERE (fio = 'Magneto' OR
                          fio = 'Wolverine' OR
                          fio = 'Mystique' OR
@@ -80,53 +80,52 @@ FROM
                         --TODO '$year_end-$month_end-$day_end'
                         OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
                             TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')))   --TODO '$year_st-$month_st-$day_st'
-                  ORDER BY fio)
+                  ORDER BY FIO)
 
-              ORDER BY fio, rn, START_DAY)
+              ORDER BY FIO, RN, START_DAY)
        )
-     GROUP BY fio, RN
+     GROUP BY FIO, RN
    )
      PIVOT (MAX(HOLIDAY)
        FOR RN
        IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
   JOIN (SELECT
-          sum(counter) HOLIDAY,
-          fio          "ФИО"
+          SUM(COUNTER) HOLIDAY,
+          FIO          "ФИО"
         FROM (
           SELECT
-            fio,
+            FIO,
             DATE_END - DATE_START + 1 COUNTER
           FROM V_EMPLOYEES_SHORT emp
             JOIN (
                    SELECT DISTINCT
-                     v.fio,
+                     v.FIO,
                      v.DATE_START,
                      v.DATE_END
-                   FROM V_VACATION_REASONS v
-                     JOIN jira.jiraISSUE iss ON (
-                       iss.issuenum = v.issuenum
-                       AND iss.issuestatus IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
-                   WHERE v.reason_id = 'Отпуск') vac
-              ON emp.ФИО = vac.fio
-
-          WHERE (fio = 'Magneto' OR
-                 fio = 'Wolverine' OR
-                 fio = 'Mystique' OR
-                 fio = 'Professor X' OR
-                 fio = 'Bishop' OR
-                 fio = 'Storm' OR
-                 fio = 'Nightcrawler' OR
-                 fio = 'Sprite' OR
-                 fio = 'Cyclops' OR
-                 fio = 'Iceman' OR
-                 fio = 'Thunderbird' OR
-                 fio = 'Colossus')
+                   FROM V_VACATIONS_CHANGES v
+                     JOIN jira.JIRAISSUE iss ON (
+                       iss.ISSUENUM = v.ISSUENUM
+                       AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
+                   WHERE v.REASON_ID = '13040') vac
+              ON emp.ФИО = vac.FIO
+              WHERE (fio = 'Magneto' OR
+                     fio = 'Wolverine' OR
+                     fio = 'Mystique' OR
+                     fio = 'Professor X' OR
+                     fio = 'Bishop' OR
+                     fio = 'Storm' OR
+                     fio = 'Nightcrawler' OR
+                     fio = 'Sprite' OR
+                     fio = 'Cyclops' OR
+                     fio = 'Iceman' OR
+                     fio = 'Thunderbird' OR
+                     fio = 'Colossus')
                 AND emp."Дата увольнения" IS NULL
                 AND DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))   --TODO '$year_st-$month_st-$day_st'
                 AND DATE_END < TRUNC(to_date('2017-01-01', 'yyyy-mm-dd'))   --TODO '$year_end-$month_end-$day_end'
-                OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
-                    TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')))   --TODO '$year_st-$month_st-$day_st'
-          ORDER BY fio)
-        GROUP BY fio
-  ) ON ФИО = fio
+                OR (TRUNC(TO_DATE(emp."Дата увольнения", 'yyyy-mm-dd')) >=
+                    TRUNC(TO_DATE('2016-01-01', 'yyyy-mm-dd')))   --TODO '$year_st-$month_st-$day_st'
+          ORDER BY FIO)
+        GROUP BY FIO
+  ) ON ФИО = FIO
 ORDER BY 1
