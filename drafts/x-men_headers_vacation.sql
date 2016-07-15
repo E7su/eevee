@@ -4,18 +4,18 @@
 
 SELECT
   FIO     ФИО,
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "10",
-  "11",
-  "12",
+  "1"     "Январь",
+  "2"     "Февраль",
+  "3"     "Март",
+  "4"     "Апрель",
+  "5"     "Май",
+  "6"     "Июнь",
+  "7"     "Июль",
+  "8"     "Август",
+  "9"     "Сентябрь",
+  "10"    "Октябрь",
+  "11"    "Ноябрь",
+  "12"    "Декабрь",
   HOLIDAY Итого
 FROM
   (SELECT *
@@ -59,9 +59,10 @@ FROM
                                 FROM V_VACATIONS_CHANGES v
                                   JOIN jira.JIRAISSUE iss ON (
                                     iss.ISSUENUM = v.ISSUENUM
-                                    AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
+                                    AND iss.ISSUESTATUS IN (10015, 11507, 11705))
                                 WHERE v.REASON_ID = '13040') vac
                       ON emp.ФИО = vac.FIO
+
                   WHERE (fio = 'Magneto' OR
                          fio = 'Wolverine' OR
                          fio = 'Mystique' OR
@@ -75,11 +76,15 @@ FROM
                          fio = 'Thunderbird' OR
                          fio = 'Colossus')
                         AND emp."Дата увольнения" IS NULL
-                        AND DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))  --TODO '$year_st-$month_st-$day_st'
-                        AND DATE_END < TRUNC(to_date('2017-01-01', 'yyyy-mm-dd'))
-                        --TODO '$year_end-$month_end-$day_end'
-                        OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
-                            TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')))   --TODO '$year_st-$month_st-$day_st'
+                        AND DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))
+                        AND DATE_END < TRUNC(to_date('2016-12-31', 'yyyy-mm-dd')) AND
+                        emp."Дата увольнения" IS NULL OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
+                            TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')))
+                  --TODO
+                  --                         AND DATE_START > TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd'))
+                  --                         AND DATE_END < TRUNC(to_date('$year_st-12-31', 'yyyy-mm-dd'))
+                  --                         OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
+                  --                             TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd')))
                   ORDER BY FIO)
 
               ORDER BY FIO, RN, START_DAY)
@@ -94,9 +99,9 @@ FROM
           FIO          "ФИО"
         FROM (
           SELECT
-            FIO,
+            SUMMARY                 FIO,
             DATE_END - DATE_START + 1 COUNTER
-          FROM V_EMPLOYEES_SHORT emp
+          FROM V_EMPLOYEES emp
             JOIN (
                    SELECT DISTINCT
                      v.FIO,
@@ -107,24 +112,13 @@ FROM
                        iss.ISSUENUM = v.ISSUENUM
                        AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
                    WHERE v.REASON_ID = '13040') vac
-              ON emp.ФИО = vac.FIO
-              WHERE (fio = 'Magneto' OR
-                     fio = 'Wolverine' OR
-                     fio = 'Mystique' OR
-                     fio = 'Professor X' OR
-                     fio = 'Bishop' OR
-                     fio = 'Storm' OR
-                     fio = 'Nightcrawler' OR
-                     fio = 'Sprite' OR
-                     fio = 'Cyclops' OR
-                     fio = 'Iceman' OR
-                     fio = 'Thunderbird' OR
-                     fio = 'Colossus')
-                AND emp."Дата увольнения" IS NULL
-                AND DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))   --TODO '$year_st-$month_st-$day_st'
-                AND DATE_END < TRUNC(to_date('2017-01-01', 'yyyy-mm-dd'))   --TODO '$year_end-$month_end-$day_end'
-                OR (TRUNC(TO_DATE(emp."Дата увольнения", 'yyyy-mm-dd')) >=
-                    TRUNC(TO_DATE('2016-01-01', 'yyyy-mm-dd')))   --TODO '$year_st-$month_st-$day_st'
+              ON emp.SUMMARY = vac.FIO
+
+          WHERE  DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))
+                AND DATE_END < TRUNC(to_date('2016-12-31', 'yyyy-mm-dd'))
+          --TODO
+          --                 AND DATE_START > TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd'))
+          --                 AND DATE_END < TRUNC(to_date('$year_st-12-31', 'yyyy-mm-dd'))
           ORDER BY FIO)
         GROUP BY FIO
   ) ON ФИО = FIO
