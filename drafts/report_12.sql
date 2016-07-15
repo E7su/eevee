@@ -1,7 +1,6 @@
 -- Author:            Polina Azarova
 -- Date of creation:  20.05.2016
--- Description:       Report (Graph):
---                    the number of bugs per release,
+-- Description:       A report on the number of bugs per release,
 --                    found in the component, integration testing,
 --                    and production for the selected period
 --                    for selected team
@@ -20,7 +19,7 @@ SELECT
   WHEN '10088'
     THEN 'Component Test'
   ELSE ''
-  END        STAGE
+  END         STAGE
 FROM jira.JIRAISSUE j
   JOIN jira.PROJECT p ON j.PROJECT = p.ID
   JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
@@ -32,4 +31,5 @@ WHERE j.ISSUESTATUS IN (11405, 11410, 10015, 10088) AND
       j.ISSUETYPE IN
       (57, 49, 10603, 10702, 1, 41, 55, 10601, 42)
       -- [1]      Bug
+      AND TRUNC(j.CREATED) >= TRUNC(TO_DATE('$year_st-$month_st-01', 'yyyy-mm-dd'))
 GROUP BY tp.TEAM, j.ISSUESTATUS
