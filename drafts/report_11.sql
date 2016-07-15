@@ -1,15 +1,16 @@
 -- Author:            Polina Azarova
 -- Date of creation:  05.05.2016
--- Description:       Report (Graph) in the number of implemented tasks 
---                    for the selected period in the sections :
+-- Description:       Report (Graph):
+--                    the number of implemented tasks
+--                    for the selected period in the sections:
 --                    -commands and all;
 --                    -size and problems in all sizes.
 
 --------------------------------------------//11//---------------------------------------------
 SELECT
-  tp.TEAM           "Команда",
-  vs.VALUE          "Размер задачи",
-  COUNT(j.ISSUENUM) "Количество issue"
+  tp.TEAM,
+  vs.VALUE          TASK_SIZE,
+  COUNT(j.ISSUENUM) QUANTITY
 FROM jira.JIRAISSUE j
   JOIN jira.PROJECT p ON j.PROJECT = p.ID
   JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
