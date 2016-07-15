@@ -2,13 +2,13 @@
 -- Date of creation:  20.05.2016
 -- Description:       A report on the number of bugs per release,
 --                    found in the component, integration testing,
---                    and production environments for the selected period
---                    for selected command
+--                    and production for the selected period
+--                    for selected team
 
 --------------------------------------//12//---------------------------------------
 SELECT
-  tp.TEAM     "Команда",
-  COUNT(j.ID) "Баги",
+  tp.TEAM,
+  COUNT(j.ID) BUG,
   CASE j.ISSUESTATUS
   WHEN '11405'
     THEN 'Component Test'
@@ -19,7 +19,7 @@ SELECT
   WHEN '10088'
     THEN 'Component Test'
   ELSE ''
-  END         "Этап"
+  END        STAGE
 FROM jira.JIRAISSUE j
   JOIN jira.PROJECT p ON j.PROJECT = p.ID
   JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
