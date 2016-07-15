@@ -1,6 +1,7 @@
 -- Author:            Polina Azarova
 -- Date of creation:  20.05.2016
--- Description:       A report on the number of bugs per release,
+-- Description:       Report (Graph):
+--                    the number of bugs per release,
 --                    found in the component, integration testing,
 --                    and production for the selected period
 --                    for selected team
