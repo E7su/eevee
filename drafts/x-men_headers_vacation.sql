@@ -3,65 +3,53 @@
 -- Description:       X-MEN HEADERS vacation
 
 SELECT
-  FIO     ФИО,
-  "1"     "Январь",
-  "2"     "Февраль",
-  "3"     "Март",
-  "4"     "Апрель",
-  "5"     "Май",
-  "6"     "Июнь",
-  "7"     "Июль",
-  "8"     "Август",
-  "9"     "Сентябрь",
-  "10"    "Октябрь",
-  "11"    "Ноябрь",
-  "12"    "Декабрь",
-  HOLIDAY Итого
+  h.*,
+  i.HOLIDAY Итого
 FROM
   (SELECT *
    FROM (
      SELECT
-       FIO,
-       RN,
-       LISTAGG(HOLIDAY, ', ')
+       tt.FIO                       ФИО,
+       tt.RN,
+       LISTAGG(tt.HOLIDAY, ', ')
        WITHIN GROUP (
-         ORDER BY HOLIDAY_ORDER) HOLIDAY
+         ORDER BY tt.HOLIDAY_ORDER) HOLIDAY
      --        regexp_replace(LISTAGG(HOLIDAY, ', ')
      --                       WITHIN GROUP (
      --                         ORDER BY holiday), '([^,]+)(,\1)?+', '\1') HOLIDAY  -- удаляем повторы в датах
      FROM
        (SELECT
           ROWNUM HOLIDAY_ORDER,
-          FIO,
-          RN,
-          HOLIDAY
+          t.FIO,
+          t.RN,
+          t.HOLIDAY
         FROM (SELECT
-                FIO,
-                RN,
-                CASE END_DAY
-                WHEN START_DAY
-                  THEN to_char(END_DAY) -- удаление даты начала, если отпуск длиной один день
-                ELSE START_DAY || '-' || END_DAY -- через чёрточку, если дата начала != дате конца
+                vac.FIO,
+                vac.RN,
+                CASE vac.END_DAY
+                WHEN vac.START_DAY
+                  THEN TO_CHAR(vac.END_DAY) -- удаление даты начала, если отпуск длиной один день
+                ELSE vac.START_DAY || '-' || vac.END_DAY -- через чёрточку, если дата начала != дате конца
                 END HOLIDAY
               FROM
                 (
                   SELECT
-                    FIO,
-                    EXTRACT(DAY FROM vac.DATE_END)     END_DAY,
-                    EXTRACT(DAY FROM vac.DATE_START)   START_DAY,
-                    EXTRACT(MONTH FROM vac.DATE_START) RN
-                  FROM V_EMPLOYEES_SHORT emp
+                    vc.FIO,
+                    EXTRACT(DAY FROM vc.DATE_END)     END_DAY,
+                    EXTRACT(DAY FROM vc.DATE_START)   START_DAY,
+                    EXTRACT(MONTH FROM vc.DATE_START) RN
+                  FROM V_EMPLOYEES_SHORT e
                     LEFT JOIN (
                                 SELECT DISTINCT
-                                  FIO,
+                                  v.FIO,
                                   v.DATE_START,
                                   v.DATE_END
                                 FROM V_VACATIONS_CHANGES v
                                   JOIN jira.JIRAISSUE iss ON (
                                     iss.ISSUENUM = v.ISSUENUM
                                     AND iss.ISSUESTATUS IN (10015, 11507, 11705))
-                                WHERE v.REASON_ID = '13040') vac
-                      ON emp.ФИО = vac.FIO
+                                WHERE v.REASON_ID = '13040') vc
+                      ON e.ФИО = vc.FIO
 
                   WHERE (fio = 'Magneto' OR
                          fio = 'Wolverine' OR
@@ -75,51 +63,49 @@ FROM
                          fio = 'Iceman' OR
                          fio = 'Thunderbird' OR
                          fio = 'Colossus')
-                        AND emp."Дата увольнения" IS NULL
+                        AND e."Дата увольнения" IS NULL
                         AND DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))
                         AND DATE_END < TRUNC(to_date('2016-12-31', 'yyyy-mm-dd')) AND
-                        emp."Дата увольнения" IS NULL OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
-                            TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')))
-                  --TODO
+                        e."Дата увольнения" IS NULL OR (TRUNC(to_date(e."Дата увольнения", 'yyyy-mm-dd')) >=
+                                                        TRUNC(to_date('2016-01-01', 'yyyy-mm-dd')))
+                  -- TODO
                   --                         AND DATE_START > TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd'))
                   --                         AND DATE_END < TRUNC(to_date('$year_st-12-31', 'yyyy-mm-dd'))
                   --                         OR (TRUNC(to_date(emp."Дата увольнения", 'yyyy-mm-dd')) >=
                   --                             TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd')))
-                  ORDER BY FIO)
+                  ORDER BY FIO) vac
 
-              ORDER BY FIO, RN, START_DAY)
-       )
-     GROUP BY FIO, RN
+              ORDER BY FIO, RN, START_DAY) t
+       ) tt
+     GROUP BY tt.FIO, tt.RN
    )
      PIVOT (MAX(HOLIDAY)
        FOR RN
-       IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
+       IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))) h
   JOIN (SELECT
-          SUM(COUNTER) HOLIDAY,
-          FIO          "ФИО"
-        FROM (
-          SELECT
-            SUMMARY                 FIO,
-            DATE_END - DATE_START + 1 COUNTER
-          FROM V_EMPLOYEES emp
-            JOIN (
-                   SELECT DISTINCT
-                     v.FIO,
-                     v.DATE_START,
-                     v.DATE_END
-                   FROM V_VACATIONS_CHANGES v
-                     JOIN jira.JIRAISSUE iss ON (
-                       iss.ISSUENUM = v.ISSUENUM
-                       AND iss.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
-                   WHERE v.REASON_ID = '13040') vac
-              ON emp.SUMMARY = vac.FIO
+          fvac.FIO,
+          SUM(fvac.COUNTER) HOLIDAY
+        FROM (SELECT
+                emp.SUMMARY                     FIO,
+                vc.DATE_END - vc.DATE_START + 1 COUNTER
+              FROM V_EMPLOYEES emp
+                JOIN (SELECT DISTINCT
+                        v.FIO,
+                        v.DATE_START,
+                        v.DATE_END
+                      FROM V_VACATIONS_CHANGES v
+                        JOIN jira.JIRAISSUE j ON (
+                          j.ISSUENUM = v.ISSUENUM
+                          AND j.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
+                      WHERE v.REASON_ID = '13040') vc
+                  ON emp.SUMMARY = vc.FIO
 
-          WHERE  DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))
-                AND DATE_END < TRUNC(to_date('2016-12-31', 'yyyy-mm-dd'))
-          --TODO
-          --                 AND DATE_START > TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd'))
-          --                 AND DATE_END < TRUNC(to_date('$year_st-12-31', 'yyyy-mm-dd'))
-          ORDER BY FIO)
-        GROUP BY FIO
-  ) ON ФИО = FIO
+              WHERE vc.DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))
+                    AND vc.DATE_END < TRUNC(to_date('2016-12-31', 'yyyy-mm-dd'))
+              -- TODO
+              --                 AND DATE_START > TRUNC(to_date('$year_st-01-01', 'yyyy-mm-dd'))
+              --                 AND DATE_END < TRUNC(to_date('$year_st-12-31', 'yyyy-mm-dd'))
+              ORDER BY FIO) fvac
+        GROUP BY fvac.FIO
+       ) i ON i.FIO = h.ФИО
 ORDER BY 1
