@@ -8,34 +8,18 @@
 --                        of the size of the issue and the team for the period
 --                    11. the number of implemented tasks
 --                        for the selected period in the sections:
---                        -commands and all;
---                        -size and problems in all sizes.
---                    12. the number of bugs per release,
---                        found in the component, integration testing,
---                        and production for the selected period
---                        for selected team
+--                        - commands and all;
+--                        - size and problems in all sizes.
 
------------------------//09//--//10//--//11//--//12//-------------------------------
+--------------------------//09//--//10//--//11//------------------------------------
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS_DURATION AS
   SELECT
     tp.TEAM,
     it.PNAME                              TYPE,
     vs.VALUE                              TASK_SIZE,
-    COUNT(j.ISSUENUM)                     QUANTITY,
+    COUNT(j.ID)                           QUANTITY,
     TRUNC(AVG(cg.CREATED - j.CREATED), 2) DURATION,
-    j.CREATED                             CREATE_DATE,
-    cg.CREATED - j.CREATED                DONE_DATE,
-    CASE j.ISSUESTATUS
-    WHEN '11405'
-      THEN 'Component Test'
-    WHEN '11410'
-      THEN 'Integration Test'
-    WHEN '10015'
-      THEN 'Production'
-    WHEN '10088'
-      THEN 'Component Test'
-    ELSE ''
-    END                                   STAGE
+    cg.CREATED                            DONE_DATE
   FROM jira.JIRAISSUE j
     JOIN jira.PROJECT p ON j.PROJECT = p.ID
     JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
@@ -44,6 +28,6 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS_DURATION AS
     JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
     JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
     JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
-  WHERE ci.FIELD = 'status' AND j.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
+  WHERE ci.FIELD = 'status' AND j.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd') AND j.ISSUESTATUS = '10015'
   GROUP BY tp.TEAM, it.PNAME, vs.VALUE, j.ISSUESTATUS, j.CREATED, cg.CREATED
   ORDER BY 1, 2, 3;
