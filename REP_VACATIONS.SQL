@@ -30,16 +30,16 @@ IS
             dates.D DAY_CURRENT
           FROM
             V_EMPLOYEES_FULL e
-            JOIN dates ON (1 = 1)
-                          AND c_fio IS NULL
-                          OR REGEXP_LIKE(lower(e."ФИО"), lower(c_fio))
-                             AND (c_proj IS NULL
-                                  OR (REGEXP_LIKE(e."Проекты", c_proj)))
-                             -- REGEXP_LIKE ищет вхождение подстроки в строку
-                             AND (c_reg IS NULL
-                                  OR e."Оформление" = c_reg)
-                             AND (c_dep IS NULL
-                                  OR e."Подразделение" = c_dep)
+            JOIN dates ON (1 = 1
+                           AND c_fio IS NULL
+                           OR REGEXP_LIKE(LOWER(e."ФИО"), LOWER(c_fio)))
+                          AND (c_proj IS NULL
+                               OR (REGEXP_LIKE(e."Проекты", c_proj)))
+                          -- REGEXP_LIKE ищет вхождение подстроки в строку
+                          AND (c_reg IS NULL
+                               OR e."Оформление" = c_reg)
+                          AND (c_dep IS NULL
+                               OR e."Подразделение" = c_dep)
          ) em
 
       -- получение отсутствий сотрудника
