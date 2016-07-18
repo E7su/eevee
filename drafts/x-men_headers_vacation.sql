@@ -42,9 +42,6 @@ FROM
                                     v.DATE_START,
                                     v.DATE_END
                                   FROM V_VACATIONS_CHANGES v
-                                    JOIN jira.JIRAISSUE j ON (
-                                      j.ISSUENUM = v.ISSUENUM
-                                      AND j.ISSUESTATUS IN (10015, 11507, 11705))
                                   WHERE v.REASON_ID = '13040'
                                  ) vc ON e.ФИО = vc.FIO
                       WHERE (fio = 'Magneto' OR
@@ -89,9 +86,6 @@ FROM
                         v.DATE_START,
                         v.DATE_END
                       FROM V_VACATIONS_CHANGES v
-                        JOIN jira.JIRAISSUE j ON (
-                          j.ISSUENUM = v.ISSUENUM
-                          AND j.ISSUESTATUS IN (10015, 11507, 11705)) -- Done, Confirmation, Planning
                       WHERE v.REASON_ID = '13040') vc
                   ON emp.SUMMARY = vc.FIO
               WHERE vc.DATE_START > TRUNC(to_date('2016-01-01', 'yyyy-mm-dd'))
