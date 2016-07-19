@@ -1,139 +1,70 @@
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_CHANGES AS
-  -- если список групп сотрудника изменялся - брать из истории изменений карточки
-  SELECT
-    vvvv.EMPLOYEE_ID                       EMPLOYEE_ID,
-    CASE
-    WHEN cid.ID IS NULL
-      THEN
-        vvvv.DATE_CREATE
-    ELSE to_date(to_char(cid.NEWSTRING), 'dd.mm.yyyy')
-    END
-                                           DAY,
-    vvvv.FIELDVALUE                        TEAMS,
-    REGEXP_COUNT(vvvv.FIELDVALUE, ',') + 1 TEAMS_COUNT
-  FROM
-    (
-      -- виртуальная таблица актуальных названий полей
-      WITH fields (ID, FIELD) AS (
+/*SELECT
+  www.EMPLOYEE_ID EMPLOYEE_ID,
+--   www.DATE_CREATE,
+--   www.DAY_ASSIGN,
+--   www.TEAMS,
+  taf.DAY_ASSIGN_RIGHT DAY,
+--   www.TAF_DATE_CREATE_MAX,
+  taf.TEAMS TEAMS,
+  REGEXP_COUNT(taf.TEAMS, ',') + 1 TEAMS_COUNT
+FROM
+  (
+    -- для перемещений "задним числом" (с непустым DAY_ASSIGN), идёт поиск списка команд,
+    -- актуального во время создания перемещения
+    SELECT
+      vvvv.EMPLOYEE_ID,
+      vvvv.DATE_CREATE,
+      vvvv.DAY_ASSIGN,
+      vvvv.TEAMS,
+      vvvv.DAY_ASSIGN_RIGHT DAY_ASSIGN_RIGHT,
+--       vvvv.GROUP_ID,
+--       taf.GROUP_ID TAF_GROUP_ID,
+      MAX(taf.DATE_CREATE) TAF_DATE_CREATE_MAX
+
+    FROM
+      (*/
         SELECT
-          NULL ID,
-          NULL FIELD
-        FROM dual
-        UNION ALL SELECT
-                    0,
-                    'Team List'
-                  FROM dual
-        UNION ALL SELECT
-                    1,
-                    'Список команд'
-                  FROM dual
-        UNION ALL SELECT
-                    10,
-                    'Team Assign Date'
-                  FROM dual
-        UNION ALL SELECT
-                    11,
-                    'Дата включения в команду'
-                  FROM dual
-        UNION ALL SELECT
-                    12,
-                    'Employee Team Assign Date'
-                  FROM dual
-      )
-      SELECT
-        -- восстановление данный по найденному ID группы
-        vvv.EMPLOYEE_ID EMPLOYEE_ID,
-        cg.CREATED      DATE_CREATE,
-        CASE WHEN f.ID >= 10
-          THEN TO_DATE(ci.NEWSTRING)
-        ELSE NULL END   DAY_ASSIGN,
-        CASE WHEN f.ID < 10
-          THEN TO_CHAR(ci.NEWSTRING)
-        ELSE NULL END   TEAMS,
+          -- восстановление данных по найденному ID группы
+          vvv.EMPLOYEE_ID      EMPLOYEE_ID,
+          taf.DATE_CREATE      DATE_CREATE,
+          taf.DAY_ASSIGN       DAY_ASSIGN,
+          taf.TEAMS            TEAMS,
+          taf.DAY_ASSIGN_RIGHT DAY_ASSIGN_RIGHT,
+          vvv.GROUP_ID         GROUP_ID
+        FROM (
+               SELECT
+                 -- если в течения дня было несколько перемещений (в т.ч. фиктивных),
+                 -- нужно выбрать самую последнюю (номера групп увеличиваются во времени)
+                 taf.EMPLOYEE_ID      EMPLOYEE_ID,
+                 MAX(taf.GROUP_ID)    GROUP_ID,
+                 taf.DAY_ASSIGN_RIGHT DAY_ASSIGN_RIGHT
+               FROM
+                 V_REP_TEAMS_APPEND_FIELDS taf
+               WHERE taf.EMPLOYEE_ID = 90287 -- TODO Виноградов
+               GROUP BY
+                 taf.EMPLOYEE_ID,
+                 taf.DAY_ASSIGN_RIGHT
+             ) vvv
+          JOIN V_REP_TEAMS_APPEND_FIELDS taf
+            ON (taf.GROUP_ID = vvv.GROUP_ID AND
+                taf.DAY_ASSIGN_RIGHT = vvv.DAY_ASSIGN_RIGHT)
+      /*) vvvv
+      -- актуальные команды на момент изменения "задним числом"
+      JOIN V_REP_TEAMS_APPEND_FIELDS taf ON (taf.EMPLOYEE_ID = vvvv.EMPLOYEE_ID)
+    WHERE
+      vvvv.DAY_ASSIGN_RIGHT + 1 > taf.DATE_CREATE
+    --           vvvv.GROUP_ID >= taf.GROUP_ID
+    --         ORDER BY 1,2,3,4,5
+    GROUP BY
+          vvvv.EMPLOYEE_ID,
+          vvvv.DATE_CREATE,
+          vvvv.DAY_ASSIGN,
+          vvvv.TEAMS,
+          vvvv.DAY_ASSIGN_RIGHT
 
-        vvv.GROUP_ID,
-        vvv.DAY_ASSIGN_RIGHT
-      FROM (
-             SELECT
-               -- актуальная группа операций перевода между командами для выбранного дня
-               vv.EMPLOYEE_ID,
-               MAX(vv.GROUP_ID) GROUP_ID,
-               vv.DAY_ASSIGN_RIGHT
-             FROM
-               (
-                 SELECT
-                   -- объединение пар полей из одной группы в одну запись
-                   MAX(v.EMPLOYEE_ID)             EMPLOYEE_ID,
-                   MAX(v.DATE_CREATE)             DATE_CREATE,
-                   TRUNC(COALESCE(
-                             MAX(v.DAY_ASSIGN),
-                             MAX(v.DATE_CREATE))) DAY_ASSIGN_RIGHT,
-                   -- дата "задним числом" переопределяет дату создания
-                   v.GROUP_ID                     GROUP_ID
-                 FROM
-                   (
-                     SELECT
-                       j.ID          EMPLOYEE_ID,
-                       cg.CREATED    DATE_CREATE,
-                       CASE WHEN f.ID >= 10
-                         THEN TO_DATE(ci.NEWSTRING)
-                       ELSE NULL END DAY_ASSIGN,
-                       cg.ID         GROUP_ID
-                     FROM JIRA.JIRAISSUE j
-                       JOIN JIRA.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
-                       JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
-                       JOIN fields f ON (f.FIELD = ci.FIELD)
-                     WHERE
-                       j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
-                       AND j.ID = 84395 -- TODO Magneto
-                   ) v
-                 GROUP BY
-                   v.GROUP_ID
-               ) vv
-             GROUP BY
-               vv.EMPLOYEE_ID,
-               vv.DAY_ASSIGN_RIGHT
-           ) vvv
-        JOIN JIRA.CHANGEGROUP cg ON (cg.ID = vvv.GROUP_ID)
-        JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
-        JOIN fields f ON (f.FIELD = ci.FIELD AND f.ID < 10)
---     ) vvvv
-/*
-  UNION ALL
-
-  -- если список групп сотрудника не изменялся, брать из поля в карточке
-  SELECT
-    j.ID                       EMPLOYEE_ID,
-    TRUNC(j.CREATED)           DAY,
-    LISTAGG(o6.CUSTOMVALUE, ',')
-    WITHIN GROUP (
-      ORDER BY o6.CUSTOMVALUE) TEAMS,
-    COUNT(*)                   TEAMS_COUNT
-  FROM JIRA.JIRAISSUE j
-    LEFT JOIN jira.CUSTOMFIELDVALUE c13 ON (c13.ISSUE = j.ID AND c13.CUSTOMFIELD = 13173)
-    -- список команд
-    LEFT JOIN jira.CUSTOMFIELDOPTION o6 ON (c13.STRINGVALUE = TO_CHAR(o6.ID))
-  -- непосредственно команда
-  WHERE
-    j.PROJECT = 12780 AND
-    o6.CUSTOMVALUE IS NOT NULL AND -- заполнено поле списка команд
-    j.ID NOT IN (
-      SELECT
-        DISTINCT j.ID EMPLOYEE_ID -- те, у кого хотя бы раз меняли команду после создания карточки
-      FROM JIRA.JIRAISSUE j
-        JOIN JIRA.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
-        JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID
-                                    AND ci.FIELDTYPE = 'custom'
-                                    AND ci.FIELD IN
-                                        (
-                                          'Team List',
-                                          'Список команд'
-                                        )
-                                   )
-            AND j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
-      --       AND j.summary IN ('Magneto')
-    )
-  GROUP BY
-    j.ID,
-    j.CREATED
+) www
+  JOIN V_REP_TEAMS_APPEND_FIELDS taf
+    ON (taf.EMPLOYEE_ID = www.EMPLOYEE_ID AND
+        taf.DATE_CREATE = www.TAF_DATE_CREATE_MAX)
 */
