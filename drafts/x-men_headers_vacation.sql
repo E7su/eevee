@@ -2,7 +2,7 @@
 -- Date of creation:  19.05.2016
 -- Description:       X-MEN HEADERS vacation
 
-CREATE OR REPLACE VIEW V_CITEB_HEADERS_HOLIDAY AS
+CREATE OR REPLACE VIEW V_REP_CITEB_HEADERS_HOLIDAY AS
   SELECT
     h."ФИО",
     h."1"     "Январь",
@@ -38,13 +38,16 @@ CREATE OR REPLACE VIEW V_CITEB_HEADERS_HOLIDAY AS
                       CASE vac.END_DAY
                       WHEN vac.START_DAY
                         THEN TO_CHAR(vac.END_DAY) -- удаление даты начала, если отпуск длиной один день
-                      ELSE vac.START_DAY || '-' || vac.END_DAY -- через чёрточку, если дата начала != дате конца
+                      ELSE vac.START_DAY || '.' || vac.START_MONTH || '-' || vac.END_DAY || '.' ||
+                           vac.END_MONTH -- через чёрточку, если дата начала != дате конца
                       END HOLIDAY
                     FROM
                       (SELECT
                          vc.FIO,
                          EXTRACT(DAY FROM vc.DATE_END)     END_DAY,
+                         EXTRACT(MONTH FROM vc.DATE_END)   END_MONTH,
                          EXTRACT(DAY FROM vc.DATE_START)   START_DAY,
+                         EXTRACT(MONTH FROM vc.DATE_START) START_MONTH,
                          EXTRACT(MONTH FROM vc.DATE_START) RN
                        FROM V_EMPLOYEES_SHORT e
                          LEFT JOIN (SELECT DISTINCT
