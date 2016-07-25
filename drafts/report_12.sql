@@ -21,7 +21,7 @@ FROM
      LEFT JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
      JOIN jira.CUSTOMFIELDVALUE cfv ON cfv.ISSUE = j.ID
      JOIN jira.CUSTOMFIELD cf ON cf.ID = cfv.CUSTOMFIELD
-     JOIN jira.CUSTOMFIELDOPTION cfo ON cfo.CUSTOMFIELD = cf.ID
+     JOIN jira.CUSTOMFIELDOPTION cfo ON cfv.STRINGVALUE = TO_CHAR(cfo.ID)
    WHERE j.ISSUETYPE IN (1, 41) AND
          -- [1]      Bug
          -- [41]     Дефект мобильного приложения
@@ -29,7 +29,7 @@ FROM
          TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-01-01', 'yyyy-mm-dd'))
    GROUP BY tp.TEAM, p.PNAME) ch
   JOIN
-  ---------------------------------//знаменатель//-----------------------------------
+  -------------------------------//знаменатель//-----------------------------------
   (SELECT
      tp.TEAM,
      p.PNAME,
