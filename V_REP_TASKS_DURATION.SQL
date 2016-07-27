@@ -13,13 +13,34 @@
 
 --------------------------//09//--//10//--//11//------------------------------------
 CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
-  SELECT
-    'SCRUM' AGILE,
-    scr.*
-  FROM TABLE (REP_TASKS_DURATION('10106', '10014', '10015')) scr -- 'To Do', 'TОDO' -> 'Done'
-  UNION
-  SELECT
-    'KANBAN' AGILE,
-    knb.*
-  FROM
-    TABLE (REP_TASKS_DURATION('11413', '10708', '11408')) knb -- 'Validation', 'Validation [IN PROGRESS]' -> 'Hot Support'
+  SELECT DISTINCT
+    n.*,
+    m.DURATION,
+    m.QUANTITY -- количество внедрённых задач
+  FROM (SELECT
+          rt.TEAM,
+          rt.TYPE,
+          rt.TASK_SIZE,
+          rt.SUMMARY,
+          rt.ISSUENUM,
+          rt.END_DATE
+        FROM V_REP_TASKS rt
+       ) n
+    JOIN
+    (SELECT
+       f.TEAM,
+       f.TYPE,
+       f.TASK_SIZE,
+       COUNT(f.TEAM)   QUANTITY,
+       SUM(f.DURATION) DURATION
+     FROM (SELECT
+             rt.TEAM,
+             rt.TYPE,
+             rt.TASK_SIZE,
+             (rt.END_DATE -
+              rt.START_DATE) DURATION -- длительность задачи
+           FROM V_REP_TASKS rt
+          ) f
+     WHERE f.DURATION > 0
+     GROUP BY f.TEAM, f.TYPE, f.TASK_SIZE) m
+      ON m.TEAM = n.TEAM AND m.TYPE = n.TYPE AND m.TASK_SIZE = n.TASK_SIZE
