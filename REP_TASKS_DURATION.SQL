@@ -56,8 +56,8 @@ IS
          f.TEAM,
          f.TYPE,
          f.TASK_SIZE,
-         COUNT(f.ISSUEID)          QUANTITY,
-         ROUND(AVG(f.DURATION), 2) DURATION
+         COUNT(f.ISSUEID) QUANTITY,
+         SUM(f.DURATION)  DURATION
        FROM (SELECT
                t.TEAM,
                t.TYPE,
