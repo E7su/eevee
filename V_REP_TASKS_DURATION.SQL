@@ -16,9 +16,10 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
   SELECT
     'SCRUM' AGILE,
     scr.*
-  FROM TABLE (REP_TASKS_DURATION('10106', '10014', '10015')) scr -- 'To Do', 'TODO' -> 'Done'
+  FROM TABLE (REP_TASKS_DURATION('10106', '10014', '10015')) scr -- 'To Do', 'TОDO' -> 'Done'
   UNION
   SELECT
     'KANBAN' AGILE,
     knb.*
-  FROM TABLE (REP_TASKS_DURATION('10081', '10708', '11408')) knb -- 'Валидация [In Progress]', 'Validation [IN PROGRESS]' -> 'Hot Support'
+  FROM
+    TABLE (REP_TASKS_DURATION('11413', '10708', '11408')) knb -- 'Validation', 'Validation [IN PROGRESS]' -> 'Hot Support'
