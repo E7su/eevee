@@ -14,6 +14,7 @@
 --------------------------//09//--//10//--//11//------------------------------------
 CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
   SELECT DISTINCT
+    m.AGILE,
     n.*,
     m.DURATION,
     m.QUANTITY -- количество внедрённых задач
@@ -28,12 +29,14 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
        ) n
     JOIN
     (SELECT
+       f.AGILE,
        f.TEAM,
        f.TYPE,
        f.TASK_SIZE,
        COUNT(f.TEAM)   QUANTITY,
        SUM(f.DURATION) DURATION
      FROM (SELECT
+             rt.AGILE,
              rt.TEAM,
              rt.TYPE,
              rt.TASK_SIZE,
@@ -42,5 +45,6 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
            FROM V_REP_TASKS rt
           ) f
      WHERE f.DURATION > 0
-     GROUP BY f.TEAM, f.TYPE, f.TASK_SIZE) m
+     GROUP BY f.AGILE, f.TEAM, f.TYPE, f.TASK_SIZE) m
       ON m.TEAM = n.TEAM AND m.TYPE = n.TYPE AND m.TASK_SIZE = n.TASK_SIZE
+  ORDER BY 1, 2 
