@@ -1,3 +1,5 @@
+-- Author:            Polina Azarova
+-- Date of creation:  01.04.2016
 -- Description:       Productivity of a certain Team completed some Issues in a date
 
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_PRODUCTIVITY AS
@@ -29,19 +31,19 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_PRODUCTIVITY AS
             -- сколько задач закрыто в эту дату по этому же проекту
             SUM(ti.SCORE) AS ISSUES_SCORE -- сколько задач закрыто в эту дату по этому же проекту * вес задачи
           FROM
-            V_REP_TEAMS_ISSUES ti
+            JIRA_READER.V_REP_TEAMS_ISSUES ti
           GROUP BY
             ti.DAY,
             ti.PROJECT,
             ti.EPIC
         ) ts
-        JOIN V_REP_TEAMS_PROJECTS tp ON -- соответствие между командами и проектами/epic-ами
+        JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON -- соответствие между командами и проектами/epic-ами
                                        (
                                          tp.PROJECT = ts.PROJECT
                                          AND (tp.EPIC IS NULL OR tp.EPIC = ts.EPIC)
                                          )
     ) tis
-    RIGHT JOIN V_REP_TEAMS_COUNT tc ON (tc.DAY = tis.DAY AND tc.TEAM = tis.TEAM)
+    RIGHT JOIN JIRA_READER.V_REP_TEAMS_COUNT tc ON (tc.DAY = tis.DAY AND tc.TEAM = tis.TEAM)
   -- сколько сотрудников закрывало задачи
   GROUP BY
     tc.DAY,
@@ -51,4 +53,3 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_PRODUCTIVITY AS
     tc.TEAM,
     tis.ISSUES_COUNT,
     tis.ISSUES_SCORE;
-
