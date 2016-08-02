@@ -1,3 +1,7 @@
+-- Author:            Polina Azarova
+-- Date of creation:  27.05.2016
+-- Description:       Append changing team fields of the employee
+
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
   -- выбор списков команд и дат перемещений из __групп изменения__ карточки сотрудника
   SELECT
@@ -17,7 +21,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
       SELECT
         j.ID                                                          EMPLOYEE_ID,-- ID сотрудника
         cg.CREATED                                                    DATE_CREATE,-- дата создания группы перемещений
-        CASE WHEN f.ID >= 10 THEN TO_DATE(ci.NEWSTRING) ELSE NULL END DAY_ASSIGN, -- NULL или день перемещения
+        CASE WHEN f.ID >= 10 THEN TO_DATE(ci.NEWSTRING, 'dd.mm.yyyy') ELSE NULL END DAY_ASSIGN, -- NULL или день перемещения
         CASE WHEN f.ID <  10 THEN TO_CHAR(ci.NEWSTRING) ELSE NULL END TEAMS,      -- NULL или список команд
         cg.ID                                                         GROUP_ID    -- ID группы перемещений
       FROM JIRA.JIRAISSUE j
@@ -25,8 +29,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
         JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
         JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD)
       WHERE
-        j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
---       AND j.ID = 86093
+        j.PROJECT = 12780
     ) v
   GROUP BY
     v.GROUP_ID
@@ -42,7 +45,6 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
     TO_CHAR(ci.OLDSTRING) TEAMS,
     TRUNC(i.DATE_CREATE)   DAY_ASSIGN_RIGHT,
     cg.ID                 GROUP_ID
-  --     COUNT(*)            TEAMS_COUNT
   FROM
     (
       -- выбор самой ранней группы изменений списка команд у сотрудника
@@ -56,8 +58,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
         JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND f.ID < 10)
         LEFT JOIN jira.CUSTOMFIELDVALUE c ON (c.ISSUE = j.ID AND c.CUSTOMFIELD = 12376) --дата приема на работу
       WHERE
-        j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
---         AND j.ID = 86093
+        j.PROJECT = 12780
       GROUP BY
         j.ID,
         j.CREATED
@@ -67,3 +68,4 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
     JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND f.ID < 10)
   WHERE
     ci.OLDSTRING IS NOT NULL;
+;
