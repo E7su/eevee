@@ -39,7 +39,7 @@ IS
                JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
                JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
                JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
-               JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
+               JOIN V_STATIC_TEAMS_PROJECTS.SQL tp ON (tp.PROJECT = p.PNAME)
              WHERE
                ci.FIELD = 'status' AND
                TO_CHAR(ci.NEWVALUE) = c_st OR TO_CHAR(ci.NEWVALUE) = c_st_2 --'10106', '10014'
