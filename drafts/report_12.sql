@@ -17,12 +17,12 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
        p.PNAME,
        -- количество багов, найденных в фазу тестирования Пром. эксплуатация
        count(cf.CFNAME) QUANTITY
-     FROM jira.JIRAISSUE j
-       JOIN jira.PROJECT p ON j.PROJECT = p.ID
-       LEFT JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME OR tp.TEAM = p.PNAME)
-       JOIN jira.CUSTOMFIELDVALUE cfv ON cfv.ISSUE = j.ID
-       JOIN jira.CUSTOMFIELD cf ON cf.ID = cfv.CUSTOMFIELD
-       JOIN jira.CUSTOMFIELDOPTION cfo ON cfv.STRINGVALUE = TO_CHAR(cfo.ID)
+     FROM JIRA.JIRAISSUE j
+       JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
+       LEFT JOIN JIRA_READER.V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME OR tp.TEAM = p.PNAME)
+       JOIN JIRA.CUSTOMFIELDVALUE cfv ON cfv.ISSUE = j.ID
+       JOIN JIRA.CUSTOMFIELD cf ON cf.ID = cfv.CUSTOMFIELD
+       JOIN JIRA.CUSTOMFIELDOPTION cfo ON cfv.STRINGVALUE = TO_CHAR(cfo.ID)
      WHERE j.ISSUETYPE IN (1, 41) AND
            -- [1]      Bug
            -- [41]     Дефект мобильного приложения
@@ -35,10 +35,10 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
        tp.TEAM,
        p.PNAME,
        count(j.id) REGRESS
-     FROM jira.JIRAISSUE j
-       JOIN jira.PROJECT p ON j.PROJECT = p.ID
-       LEFT JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
-       JOIN jira.LABEL Lb ON Lb.ISSUE = j.id
+     FROM JIRA.JIRAISSUE j
+       JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
+       LEFT JOIN JIRA_READER.V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
+       JOIN JIRA.LABEL Lb ON Lb.ISSUE = j.id
      WHERE j.ISSUETYPE = 3 AND
            -- [3]      Task
            TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-08-01', 'yyyy-mm-dd')) AND LABEL = 'Регресс'
