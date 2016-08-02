@@ -27,6 +27,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
              WHERE D < CURRENT_DATE --end
            )
            SELECT
+             DISTINCT -- чтобы не дублировать записи, в случае нескольких отсутствий в один день
              -- обогащение пары (сотрудник, тек. дата) списком и количеством команд
              e.SUMMARY                       EMPLOYEE,
              tcd.DAY_CURRENT                 DAY,
@@ -58,6 +59,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_COUNT AS
              -- получение отсутствий сотрудника
              LEFT JOIN
              (
+               -- на один день у сотрудника могут быть заведены несколько отсутствий :(
+               -- поэтому в SELECT на верхнем уровне стоит DISTINCT
                SELECT
                  vc.*,
                  vr.VALUE
