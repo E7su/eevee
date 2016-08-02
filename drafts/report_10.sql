@@ -1,14 +1,13 @@
--- Author:            Polina Azarova
+﻿-- Author:            Polina Azarova
 -- Date of creation:  05.05.2016
--- Description:       Report (Graph):
---                    the average duration of the task in the context
+-- Description:       Report (Graph ), the average duration of the task in the context 
 --                    of the size of the issue and the team for the period
 
 --------------------------------------//10//---------------------------------------
 SELECT
-  tp.TEAM,
-  vs.VALUE                              TASK_SIZE,
-  TRUNC(AVG(cg.CREATED - j.CREATED), 2) DURATION
+  tp.TEAM                               "Команда",
+  vs.VALUE                              "Размер задачи",
+  TRUNC(AVG(cg.CREATED - j.CREATED), 2) "Длит-ть задачи"
 FROM JIRA.JIRAISSUE j
   JOIN jira.PROJECT p ON j.PROJECT = p.ID
   JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
@@ -16,7 +15,7 @@ FROM JIRA.JIRAISSUE j
   JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
   JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
   JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
-  JOIN V_REP_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
+  JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
 WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWSTRING) = 'Done'
       AND TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-01-01', 'yyyy-mm-dd'))
       AND TRUNC(j.CREATED) >= TRUNC(TO_DATE('$year_st-$month_st-$day_st', 'yyyy-mm-dd'))
