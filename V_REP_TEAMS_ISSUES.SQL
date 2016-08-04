@@ -38,6 +38,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_ISSUES AS
     WHERE
       ci.field = 'status'
       AND to_char(ci.newstring) = 'Done'
+      AND t.PNAME IN ('User Story', 'Bug')
       -- не смотреть проекты, не участвующие в подсчёте статистики
       AND i.PROJECT IN (SELECT DISTINCT tp.PROJECT
                         FROM JIRA_READER.V_STATIC_TEAMS_PROJECTS tp)
