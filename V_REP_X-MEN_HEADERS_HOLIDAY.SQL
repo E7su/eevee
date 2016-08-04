@@ -2,7 +2,7 @@
 -- Date of creation:  19.05.2016
 -- Description:       X-MEN HEADERS vacation
 
-CREATE OR REPLACE VIEW V_REP_CITEB_HEADERS_HOLIDAY AS
+CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
   SELECT
     s.ФИО,
     -- обработка ситуации, когда отпуск попал на границу месяцев
@@ -55,16 +55,14 @@ CREATE OR REPLACE VIEW V_REP_CITEB_HEADERS_HOLIDAY AS
                          -- выводим через чёрточку время отпуска
                          WHEN vac.START_MONTH
                            THEN
-                             vac.START_DAY || '.' || vac.START_MONTH || '-' || vac.END_DAY || '.' || vac.END_MONTH
-                         -- если попал на границу, то пишем что он был до последнего дня месяца
-                         -- и месяц конца будет как месяц начала
-                         -- а конец отпуска (который попал на другой месяц подтягивается из нижней части джойна)
-                         ELSE vac.START_DAY || '.' || vac.START_MONTH || '-' ||
+                             vac.START_DAY || '-' || vac.END_DAY
+                         -- если попал на границу, то пишем, что он был до последнего дня месяца
+                         -- а конец отпуска, который попал на другой месяц, подтягивается из нижней части джойна
+                         ELSE vac.START_DAY || '-' ||
                               TO_CHAR(LAST_DAY(TO_DATE(vac.DATE_START, 'YYYY-MM-DD')), 'DD')
-                              || '.' || vac.START_MONTH
                          END)
                       END      HOLIDAY
-                    FROM V_REP_CITEB_HEADERS_DATES vac
+                    FROM JIRA_READER.V_REP_CITEB_HEADERS_DATES vac
                     ORDER BY vac.FIO, vac.RN_E, vac.START_DAY
                    ) t
              ) tt
@@ -79,12 +77,12 @@ CREATE OR REPLACE VIEW V_REP_CITEB_HEADERS_HOLIDAY AS
              FROM (SELECT
                      emp.SUMMARY                     FIO,
                      vc.DATE_END - vc.DATE_START + 1 COUNTER
-                   FROM V_EMPLOYEES emp
+                   FROM JIRA_READER.V_EMPLOYEES emp
                      JOIN (SELECT DISTINCT
                              v.FIO,
                              v.DATE_START,
                              v.DATE_END
-                           FROM V_VACATIONS_CHANGES v
+                           FROM JIRA_READER.V_VACATIONS_CHANGES v
                            WHERE v.REASON_ID = '13040') vc
                        ON emp.SUMMARY = vc.FIO
                    WHERE vc.DATE_START > TRUNC(TO_DATE('2016-01-01', 'YYYY-MM-DD'))
@@ -116,12 +114,10 @@ CREATE OR REPLACE VIEW V_REP_CITEB_HEADERS_HOLIDAY AS
                      -- дата удаляется, если отпуск длиной один день
                      THEN NULL
                    -- если попал на границу, то вторая часть отпуска была с первого дня месяца
-                   -- и месяц начала соответственно такой же как месяц конца отпуска
-                   ELSE '01' || '.' || vac.END_MONTH || '-' || vac.END_DAY || '.' ||
-                        vac.END_MONTH
+                   ELSE '01' || '-' || vac.END_DAY
                    END      HOLIDAY
                  FROM
-                   V_REP_CITEB_HEADERS_DATES vac
+                   JIRA_READER.V_REP_CITEB_HEADERS_DATES vac
                 ) t
           ) tt
        )
