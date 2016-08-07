@@ -46,8 +46,3 @@ FROM (
 
 GROUP BY fio_final
 ORDER BY fio_final
-
-
-
-
-
