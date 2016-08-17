@@ -12,12 +12,11 @@ CREATE OR REPLACE VIEW V_WORK_DURATION AS
     emp."Оформление",
     emp."Подразделение"
   FROM V_EMPLOYEES_SHORT emp
-  WHERE emp."Оформление" IN ('', '') AND emp."Дата приёма" > TO_DATE('2010-01-01', 'yyyy-mm-dd')
-  ORDER BY 1, 2
+  WHERE emp."Оформление" IN ('Штат', 'Вентра')
 
 
 -- WITH dates (d) AS (
---   SELECT TO_DATE('2013-01-01', 'yyyy-mm-dd') AS d
+--   SELECT TO_DATE('2014-01-01', 'yyyy-mm-dd') AS d
 --   FROM dual --start
 --   UNION ALL
 --   SELECT ADD_MONTHS(d, 1) AS d
@@ -39,5 +38,14 @@ CREATE OR REPLACE VIEW V_WORK_DURATION AS
 --             ) s
 --     ON (dates.d >= s."Дата приёма" --OR s."Дата приёма" IS NULL
 --         AND dates.d <= s."Работа до")
--- --WHERE s."Оформление" = '' --AND s."Подразделение" = ''
+-- WHERE  s."Оформление" IS NOT NULL
+--
+-- -- // --
+-- -- Штат
+-- -- Вентра
+--
+-- -- УБПиВЭП
+-- -- УРПИПр
+-- -- УРЭК
+-- -- ЦИТЭБ
 -- GROUP BY dates.d, s."Подразделение", s."Оформление"
