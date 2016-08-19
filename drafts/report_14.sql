@@ -6,44 +6,59 @@
 --------------------------------------//14//---------------------------------------
 -- Kt // Коэффициент текучести - отношение количества уволенных сотрудников в среднесписочной численности
 -- Kt = Ky/CHsr * 100
-SELECT round(kt.KY / kt.CHSR * 100, 2) KT
+SELECT
+  kt."Подразделение",
+  kt."Оформление",
+  ROUND(kt.KY / kt.CHSR * 100, 2) KT
 FROM
   -- Ky // Количество уволенных сотрудников за данный период времени
-  (SELECT *
+  (SELECT
+     kyky.*,
+     cnnn.CHSR
    FROM
-     (SELECT count(ky."Дата увольнения") KY
+     (SELECT
+        COUNT(ky."Дата увольнения") KY,
+        ky."Подразделение",
+        ky."Оформление"
       FROM
-        (SELECT emp."Дата увольнения"
+        (SELECT
+           emp."Дата увольнения",
+           emp."Подразделение",
+           emp."Оформление"
          FROM V_EMPLOYEES_SHORT emp
          WHERE --TODO add parameter
-           emp."Дата увольнения" >= to_date('2016-04-01', 'yyyy-mm-dd') AND
-           emp."Дата увольнения" <= to_date('2016-05-01', 'yyyy-mm-dd')
+           emp."Дата приёма" <= TO_DATE('2015-12-01', 'yyyy-mm-dd') AND
+           emp."Дата увольнения" >= TO_DATE('2015-12-01', 'yyyy-mm-dd') AND
+           emp."Дата увольнения" <= TO_DATE('2016-01-01', 'yyyy-mm-dd')
         ) ky
-       )
+      GROUP BY ky."Подразделение", ky."Оформление"
+     ) kyky
      JOIN
-     -- CHsr // Среднесписочная численность (количество сотрудников на начало месяца +
-     --                                                      + количество сотрудников за следующий месяц, делённые на 2)
-     -- CHsr = CHn + CHk
-     (SELECT (cnn.CHN + ckk.CHK) / 2 CHSR
+     -- CHsr // Среднесписочная численность (количество сотрудников в декабре +
+     --     //  + количество сотрудников в последующие месяцы, делённые на количество месяцев, прошедщих с декабря)
+     -- CHsr = CHn/MONTHS_BETWEEN(DEC, REPORT_MONTH)
+     (SELECT
+        cnn.CHN / MONTHS_BETWEEN(TO_DATE('2016-01-01', 'yyyy-mm-dd'), TO_DATE('2015-12-01', 'yyyy-mm-dd')) CHSR,
+        cnn."Подразделение",
+        cnn."Оформление"
       FROM
-        -- CHn // Количество сотрудников на начало месяцв (начало периода)
-        (SELECT count(cn."Дата увольнения") CHN
+        -- CHn // Количество сотрудников за период
+        (SELECT
+           COUNT(cn."Дата увольнения") CHN,
+           cn."Подразделение",
+           cn."Оформление"
          FROM
-           (SELECT emp."Дата увольнения"
+           (SELECT
+              emp."Дата увольнения",
+              emp."Подразделение",
+              emp."Оформление"
             FROM V_EMPLOYEES_SHORT emp
-            WHERE emp."Дата увольнения" IS NULL OR emp."Дата увольнения" > to_date('2016-04-01', 'yyyy-mm-dd') OR
-                  --TODO add parameter
-                  emp."Дата увольнения" < to_date('2016-04-30', 'yyyy-mm-dd') --TODO add parameter
+            WHERE emp."Дата приёма" <= TO_DATE('2015-12-01', 'yyyy-mm-dd') AND emp."Дата увольнения" IS NULL OR
+                  emp."Дата увольнения" >= TO_DATE('2016-01-01', 'yyyy-mm-dd')--TODO add parameter
            ) cn
+         GROUP BY cn."Подразделение", cn."Оформление"
         ) cnn
-        JOIN
-        -- CHk // Количество сотрудников на начало следующего месяца (конец периода)
-        (SELECT count(ck."Дата увольнения") CHk
-         FROM
-           (SELECT emp."Дата увольнения"
-            FROM V_EMPLOYEES_SHORT emp
-            WHERE emp."Дата увольнения" IS NULL OR emp."Дата увольнения" >= to_date('2016-04-30', 'yyyy-mm-dd') --TODO add parameter
-           ) ck
-        ) ckk
-          ON 1 = 1)
-       ON 1 = 1) kt
+     ) cnnn
+       ON kyky."Подразделение" = cnnn."Подразделение" AND
+          kyky."Оформление" = cnnn."Оформление") kt
+WHERE kt."Оформление" IN ('Штат', 'Вентра')
