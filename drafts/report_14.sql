@@ -13,13 +13,13 @@ SELECT
 FROM
   -- Ky // Количество уволенных сотрудников за данный период времени
   (SELECT
-     kyky.*,
-     cnnn.CHSR
+     ky.*,
+     cn.CHSR
    FROM
      (SELECT
-        COUNT(ky."Дата увольнения") KY,
-        ky."Подразделение",
-        ky."Оформление"
+        COUNT(t."Дата увольнения") KY,
+        t."Подразделение",
+        t."Оформление"
       FROM
         (SELECT
            emp."Дата увольнения",
@@ -30,23 +30,23 @@ FROM
            emp."Дата приёма" <= TO_DATE('2015-12-01', 'yyyy-mm-dd') AND
            emp."Дата увольнения" >= TO_DATE('2015-12-01', 'yyyy-mm-dd') AND
            emp."Дата увольнения" <= TO_DATE('2016-01-01', 'yyyy-mm-dd')
-        ) ky
-      GROUP BY ky."Подразделение", ky."Оформление"
-     ) kyky
+        ) t
+      GROUP BY t."Подразделение", t."Оформление"
+     ) ky
      JOIN
      -- CHsr // Среднесписочная численность (количество сотрудников в декабре +
      --     //  + количество сотрудников в последующие месяцы, делённые на количество месяцев, прошедщих с декабря)
      -- CHsr = CHn/MONTHS_BETWEEN(DEC, REPORT_MONTH)
      (SELECT
-        cnn.CHN / MONTHS_BETWEEN(TO_DATE('2016-01-01', 'yyyy-mm-dd'), TO_DATE('2015-12-01', 'yyyy-mm-dd')) CHSR,
-        cnn."Подразделение",
-        cnn."Оформление"
+        c.CHN / MONTHS_BETWEEN(TO_DATE('2016-01-01', 'yyyy-mm-dd'), TO_DATE('2015-12-01', 'yyyy-mm-dd')) CHSR,
+        c."Подразделение",
+        c."Оформление"
       FROM
         -- CHn // Количество сотрудников за период
         (SELECT
-           COUNT(cn."Дата увольнения") CHN,
-           cn."Подразделение",
-           cn."Оформление"
+           COUNT(t."Дата увольнения") CHN,
+           t."Подразделение",
+           t."Оформление"
          FROM
            (SELECT
               emp."Дата увольнения",
@@ -55,10 +55,10 @@ FROM
             FROM V_EMPLOYEES_SHORT emp
             WHERE emp."Дата приёма" <= TO_DATE('2015-12-01', 'yyyy-mm-dd') AND emp."Дата увольнения" IS NULL OR
                   emp."Дата увольнения" >= TO_DATE('2016-01-01', 'yyyy-mm-dd')--TODO add parameter
-           ) cn
-         GROUP BY cn."Подразделение", cn."Оформление"
-        ) cnn
-     ) cnnn
-       ON kyky."Подразделение" = cnnn."Подразделение" AND
-          kyky."Оформление" = cnnn."Оформление") kt
+           ) t
+         GROUP BY t."Подразделение", t."Оформление"
+        ) c
+     ) cn
+       ON ky."Подразделение" = cn."Подразделение" AND
+          ky."Оформление" = cn."Оформление") kt
 WHERE kt."Оформление" IN ('Штат', 'Вентра')
