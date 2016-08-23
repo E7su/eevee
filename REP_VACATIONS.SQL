@@ -2,12 +2,12 @@ CREATE OR REPLACE TYPE VACATION_TY IS OBJECT (FIO      VARCHAR2(255), REASON VAR
                                               ISSUENUM VARCHAR2(255), COLOR VARCHAR2(255), IS_WORKING_DAY NUMBER);
 CREATE OR REPLACE TYPE VACATION_TBL_TY IS TABLE OF VACATION_TY;
 
-CREATE OR REPLACE FUNCTION REP_VACATIONS(p_year_st VARCHAR2, p_month_st VARCHAR2, p_fio VARCHAR2, p_proj VARCHAR2,
+CREATE OR REPLACE FUNCTION REP_VACATIONS(p_year_st VARCHAR2, p_month_st VARCHAR2, p_fio VARCHAR2, p_team VARCHAR2,
                                          p_reg     VARCHAR2, p_dep VARCHAR2)
   RETURN VACATION_TBL_TY
 PIPELINED
 IS
-  CURSOR cur (c_year_st VARCHAR2, c_month_st VARCHAR2, c_fio VARCHAR2, c_proj VARCHAR2, c_reg VARCHAR2, c_dep VARCHAR2)
+  CURSOR cur (c_year_st VARCHAR2, c_month_st VARCHAR2, c_fio VARCHAR2, c_team VARCHAR2, c_reg VARCHAR2, c_dep VARCHAR2)
   IS
     WITH dates (D) AS (
       SELECT TO_DATE(c_year_st || '-' || c_month_st || '-01', 'yyyy-mm-dd')
@@ -30,19 +30,16 @@ IS
             dates.D DAY_CURRENT
           FROM
             V_EMPLOYEES_FULL e
-            JOIN dates ON (1 = 1
-                           AND c_fio IS NULL
+            JOIN dates ON (c_fio IS NULL
                            OR REGEXP_LIKE(LOWER(e."ФИО"), LOWER(c_fio)))
-                          AND (c_proj IS NULL
-                               OR (REGEXP_LIKE(e."Проекты", c_proj)))
+                          AND (c_team IS NULL
+                               OR (REGEXP_LIKE(e."Команда", c_team)))
                           -- REGEXP_LIKE ищет вхождение подстроки в строку
                           AND (c_reg IS NULL
                                OR e."Оформление" = c_reg)
                           AND (c_dep IS NULL
                                OR e."Подразделение" = c_dep)
          ) em
-
-      -- получение отсутствий сотрудника
       LEFT JOIN
       (SELECT
          vc.DATE_START,
@@ -57,9 +54,11 @@ IS
       ) vv ON (vv.FIO = em.employee)
     WHERE
       em.DAY_CURRENT >= TRUNC(vv.DATE_START) AND
-      em.DAY_CURRENT <= TRUNC(vv.DATE_END) OR vv.DATE_START IS NULL AND vv.DATE_END IS NULL;
+      em.DAY_CURRENT <= TRUNC(vv.DATE_END) OR vv.DATE_START IS NULL AND vv.DATE_END IS NULL
+    ORDER BY 1;
+
   BEGIN
-    FOR rec IN cur (p_year_st, p_month_st, p_fio, p_proj, p_reg, p_dep)
+    FOR rec IN cur (p_year_st, p_month_st, p_fio, p_team, p_reg, p_dep)
     LOOP
       PIPE ROW (VACATION_TY(rec.FIO, rec.REASON, rec.DAT, rec.ISSUENUM, rec.COLOR, rec.IS_WORKING_DAY));
     END LOOP;
@@ -93,7 +92,7 @@ FROM
             END                 REASON
           FROM (
                  SELECT *
-                 FROM TABLE (REP_VACATIONS('$year_st', '$month_st', '$fio', '$proj', '$reg', '$dep'))
+                 FROM TABLE (REP_VACATIONS('$year_st', '$month_st', '$fio', '$team', '$reg', '$dep'))
                ) f
         ) fr
    WHERE REASON IS NOT NULL
