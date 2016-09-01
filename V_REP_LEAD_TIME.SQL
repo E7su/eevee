@@ -6,12 +6,12 @@
 CREATE OR REPLACE VIEW V_REP_LEAD_TIME AS
   SELECT
     n.*,
-    t.DURATION - m.NOT_WORK_DAY DURATION
+    t.DURATION - m.NOT_WORK_DAY DURATION -- чистая длительность (без учёта праздников и выходных)
   FROM
     (SELECT DISTINCT
        rt.TYPE,
        rt.SUMMARY,
-       rt.ISSUENUM,
+       rt.ISSUEID,
        rt.START_DATE,
        rt.END_DATE
      FROM JIRA_READER.V_DEVOPS_TASKS rt
@@ -20,20 +20,21 @@ CREATE OR REPLACE VIEW V_REP_LEAD_TIME AS
     LEFT JOIN
     (SELECT
        COUNT(dt.NOT_WORK_DAY) NOT_WORK_DAY,
-       dt.ISSUENUM
+       dt.ISSUEID
      FROM JIRA_READER.V_DEVOPS_TASKS dt
-     GROUP BY dt.ISSUENUM) m
-      ON n.ISSUENUM = m.ISSUENUM
-    JOIN (SELECT
-            f.ISSUENUM,
-            SUM(f.DURATION) DURATION
-          FROM (SELECT
-                  dt.ISSUENUM,
-                  (dt.END_DATE -
-                   dt.START_DATE) DURATION
-                -- длительность задачи
-                FROM JIRA_READER.V_DEVOPS_TASKS dt
-               ) f
-          WHERE f.DURATION > 0
-          GROUP BY f.ISSUENUM) t ON t.ISSUENUM = m.ISSUENUM
+     WHERE dt.NOT_WORK_DAY = '0'
+     GROUP BY dt.ISSUEID) m
+      ON n.ISSUEID = m.ISSUEID
+    LEFT JOIN (SELECT
+                 f.ISSUEID,
+                 SUM(f.DURATION) DURATION
+               FROM (SELECT
+                       dt.ISSUEID,
+                       (dt.END_DATE -
+                        dt.START_DATE) DURATION
+                     -- длительность задачи
+                     FROM JIRA_READER.V_DEVOPS_TASKS dt
+                    ) f
+               WHERE f.DURATION > 0
+               GROUP BY f.ISSUEID) t ON t.ISSUEID = n.ISSUEID OR t.ISSUEID = m.ISSUEID
   ORDER BY n.START_DATE
