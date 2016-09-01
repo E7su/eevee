@@ -6,7 +6,7 @@
 CREATE OR REPLACE VIEW V_REP_LEAD_TIME AS
   SELECT
     n.*,
-    t.DURATION - m.NOT_WORK_DAY DURATION -- чистая длительность (без учёта праздников и выходных)
+    t.DURATION - COALESCE(m.NOT_WORK_DAY, 0) DURATION
   FROM
     (SELECT DISTINCT
        rt.TYPE,
@@ -25,16 +25,15 @@ CREATE OR REPLACE VIEW V_REP_LEAD_TIME AS
      WHERE dt.NOT_WORK_DAY = '0'
      GROUP BY dt.ISSUEID) m
       ON n.ISSUEID = m.ISSUEID
-    LEFT JOIN (SELECT
-                 f.ISSUEID,
-                 SUM(f.DURATION) DURATION
-               FROM (SELECT
-                       dt.ISSUEID,
-                       (dt.END_DATE -
-                        dt.START_DATE) DURATION
-                     -- длительность задачи
-                     FROM JIRA_READER.V_DEVOPS_TASKS dt
-                    ) f
-               WHERE f.DURATION > 0
-               GROUP BY f.ISSUEID) t ON t.ISSUEID = n.ISSUEID OR t.ISSUEID = m.ISSUEID
-  ORDER BY n.START_DATE
+    JOIN (SELECT
+            f.ISSUEID,
+            SUM(f.DURATION) DURATION
+          FROM (SELECT
+                  dt.ISSUEID,
+                  (dt.END_DATE -
+                   dt.START_DATE) DURATION
+                -- длительность задачи
+                FROM JIRA_READER.V_DEVOPS_TASKS dt
+               ) f
+          WHERE f.DURATION > 0
+          GROUP BY f.ISSUEID) t ON t.ISSUEID = n.ISSUEID OR t.ISSUEID = m.ISSUEID
