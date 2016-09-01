@@ -4,12 +4,12 @@
 
 CREATE OR REPLACE VIEW JIRA_READER.V_DEVOPS_TASKS AS
   WITH dates (D) AS (
-    SELECT TO_DATE(CURRENT_DATE - 30, 'YYYY-MM-DD')
+    SELECT TRUNC(CURRENT_DATE - 30)
     FROM dual -- start
     UNION ALL
     SELECT D + 1 AS DAY_OF_MONTH
     FROM dates
-    WHERE D < CURRENT_DATE -- end
+    WHERE D <= CURRENT_DATE -- end
   )
   SELECT
     n.*,
@@ -52,4 +52,4 @@ CREATE OR REPLACE VIEW JIRA_READER.V_DEVOPS_TASKS AS
            WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWVALUE) = '10015'-- Done
           ) d
             ON d.ISSUEID = t.ISSUEID) n
-    JOIN dates ON (IS_WORKING_DAY(dates.D) = '0' AND TRUNC(n.START_DATE) <= dates.D AND TRUNC(n.END_DATE) >= dates.D)
+    JOIN dates ON (TRUNC(n.START_DATE) <= dates.D AND TRUNC(n.END_DATE) >= dates.D)
