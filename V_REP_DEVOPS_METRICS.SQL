@@ -9,7 +9,7 @@ CREATE OR REPLACE VIEW V_REP_DEVOPS_METRICS AS
     'Lead Time' METRICS,
     t.DAT,
     t.STAT,
-    t.VALUE
+    t.VALUE -- в днях
   FROM
     TABLE (REP_DEVOPS_TASKS_METRICS_D('User Story', '3', '10015')) t -- 'In Progress' -> 'Done'
   UNION ALL
@@ -18,7 +18,8 @@ CREATE OR REPLACE VIEW V_REP_DEVOPS_METRICS AS
     'Pure Deployment Time' METRICS,
     d.DAT,
     d.STAT,
-    d.VALUE * 8            VALUE
+    d.VALUE * 8            VALUE -- в часах
+  -- считать с 9:00-18:00 пока нельзя, т.к. даты начала выполнения задач зачастую > 18:00
   FROM
     TABLE (REP_DEVOPS_TASKS_METRICS_D('DevOps Task', '11812', '11819')) d -- 'Build' -> 'Waiting Feedback(Live)'
   ORDER BY 1, 3
