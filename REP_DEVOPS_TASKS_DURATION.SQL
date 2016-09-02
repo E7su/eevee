@@ -37,8 +37,8 @@ IS
       ) inf
       LEFT JOIN
       (SELECT DISTINCT
-         COUNT(dt.NOT_WORK_DAY) NOT_WORK_DAY,
          -- считаем количество нерабочих дней
+         COUNT(dt.NOT_WORK_DAY) NOT_WORK_DAY,
          dt.ISSUEID
        FROM
          (SELECT *
