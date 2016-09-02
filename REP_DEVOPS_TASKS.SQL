@@ -18,13 +18,13 @@ PIPELINED
 IS
   CURSOR cur (c_day NUMBER, -- с какого дня считать
     c_end_day NUMBER, -- по какой день
-    c_type VARCHAR2, -- тип issue 
+    c_type VARCHAR2, -- тип issue
     c_st VARCHAR2, -- статус начала выполнения issue
     c_end VARCHAR2) -- статус окончания выполнения issue
   IS
     -- генератор дат (чтобы далее не учитывать выходные и праздники при расчёте длительности выполнения задачи)
     WITH dates (D) AS (
-      -- для подсчёта скользящим окном за предыдущие 30 дней 
+      -- для подсчёта скользящим окном за предыдущие 30 дней
       -- (первые 15 и вторые 15 для отображения графика по двум точкам)
       SELECT TRUNC(CURRENT_DATE - c_day)
       FROM dual -- start
@@ -34,18 +34,18 @@ IS
       WHERE D <= CURRENT_DATE - c_end_day -- end
     )
     SELECT
-      n.*,
+      t.*,
       IS_WORKING_DAY(dates.D) NOT_WORK_DAY,
       -- проверяет, рабочий ли это день
       -- в выходные 0, ELSE 1
       dates.D                 WORK_DATE
     FROM (SELECT
-            t.PKEY,
-            t.TYPE,
-            t.SUMMARY,
-            t.ISSUEID,
-            t.START_DATE,
-            d.END_DATE
+            sd.PKEY,
+            sd.TYPE,
+            sd.SUMMARY,
+            sd.ISSUEID,
+            sd.START_DATE,
+            ed.END_DATE
           FROM
             (SELECT DISTINCT
                p.PKEY,
@@ -67,7 +67,7 @@ IS
                -- даты начала выполнения задачи должны помешаться в рассматриваемый период
                AND cg.CREATED >= CURRENT_DATE - c_day
                AND cg.CREATED <= CURRENT_DATE - c_end_day
-            ) t
+            ) sd
             JOIN
             (SELECT
                cg.ISSUEID,
@@ -78,10 +78,10 @@ IS
                    -- даты окончания выполнения задачи должны помешаться в рассматриваемый период
                    AND cg.CREATED <= CURRENT_DATE - c_end_day
                    AND cg.CREATED >= CURRENT_DATE - c_day
-            ) d
-              ON d.ISSUEID = t.ISSUEID) n
+            ) ed
+              ON ed.ISSUEID = sd.ISSUEID) t
       -- создаём список из дат, лежащих между датами начала и конца выполнения issue
-      JOIN dates ON (TRUNC(n.START_DATE) <= dates.D AND TRUNC(n.END_DATE) >= dates.D);
+      JOIN dates ON (TRUNC(t.START_DATE) <= dates.D AND TRUNC(t.END_DATE) >= dates.D);
   BEGIN
     FOR rec IN cur (p_day, p_end_day, p_type, p_st, p_end)
     LOOP
