@@ -3,7 +3,7 @@
 -- Description:       V_REP_DEVOPS_METRICS -> REP_DEVOPS_TASKS_METRICS_D -> REP_DEVOPS_TASKS_METRICS ->
 --                    -> REP_DEVOPS_TASKS_DURATION -> REP_DEVOPS_TASKS
 
-
+-- третья по вложенности функция, вычисляет метрики
 CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_TY IS OBJECT (STAT  VARCHAR2(255),
                                                           VALUE VARCHAR2(255));
 CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_TBL_TY IS TABLE OF DEVOPS_TASKS_METRICS_TY;
@@ -26,27 +26,31 @@ IS
     -- Медиана
     SELECT
       'MEDIANA'  STAT,
-      f.DURATION VALUE
+      f.DURATION VALUE -- значение длительности, находящейся в середине списка
     FROM
-      (SELECT ROUND(COUNT(rt.DURATION) / 2) COUNTER
+      (SELECT ROUND(COUNT(rt.DURATION) / 2) COUNTER -- находит середину в списке длительностей
        FROM (SELECT *
              FROM
                TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt) t
       JOIN (SELECT
+              -- сортирует по возрастанию
               ROWNUM RN,
               DURATION
             FROM
               (SELECT DURATION
-               FROM (SELECT *
-                     FROM
-                       TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
-               ORDER BY DURATION)) f ON f.RN = t.COUNTER
+               FROM
+                 (SELECT *
+                  FROM
+                    TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
+               ORDER BY DURATION)
+           ) f ON f.RN = t.COUNTER
     UNION ALL
     -- 90ый перцентиль
     SELECT
       'PERCENTILE' STAT,
       f.DURATION   VALUE
     FROM
+      -- находит запись, где порядковый номер приблизительно равен 90% длины списка
       (SELECT ROUND(COUNT(rt.DURATION) / 100 * 90) COUNTER
        FROM (SELECT *
              FROM
@@ -55,10 +59,11 @@ IS
               ROWNUM RN,
               DURATION
             FROM
-              (SELECT DURATION
-               FROM (SELECT *
-                     FROM
-                       TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
+              (SELECT DURATION -- сортирует по возрастанию
+               FROM
+                 (SELECT *
+                  FROM
+                    TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
                ORDER BY DURATION)) f ON f.RN = t.COUNTER;
   BEGIN
     FOR rec IN cur (p_day, p_end_day, p_type, p_st, p_end)
@@ -67,10 +72,3 @@ IS
     END LOOP;
     RETURN;
   END;
-
-/*
--- все
-SELECT *
-FROM
-TABLE (REP_DEVOPS_TASKS('30', '0', 'User Story', '3', '10015')) -- 'In Progress' -> 'Done'
-*/
