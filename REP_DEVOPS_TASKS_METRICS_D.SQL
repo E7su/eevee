@@ -3,8 +3,13 @@
 -- Description:       V_REP_DEVOPS_METRICS -> REP_DEVOPS_TASKS_METRICS_D -> REP_DEVOPS_TASKS_METRICS ->
 --                    -> REP_DEVOPS_TASKS_DURATION -> REP_DEVOPS_TASKS
 
-CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_D_TY IS OBJECT (DAT  VARCHAR2(255),
-                                                            STAT VARCHAR2(255), VALUE NUMBER);
+-- вторая по вложенности функция, вычисляет метрики для начала и конца рассматриваемого тридцатидневного периода
+-- для построения графика
+CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_D_TY IS OBJECT (DAT      VARCHAR2(255), PKEY VARCHAR2(255),
+                                                            TYPE     VARCHAR2(255), SUMMARY VARCHAR2(255),
+                                                            ISSUEID  VARCHAR2(255), START_DATE DATE,
+                                                            END_DATE DATE, DURATION NUMBER, STAT VARCHAR2(255),
+                                                            VALUE    NUMBER);
 CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_D_TBL_TY IS TABLE OF DEVOPS_TASKS_METRICS_D_TY;
 
 CREATE OR REPLACE FUNCTION REP_DEVOPS_TASKS_METRICS_D(p_type VARCHAR2,
@@ -31,7 +36,9 @@ IS
   BEGIN
     FOR rec IN cur (p_type, p_st, p_end)
     LOOP
-      PIPE ROW (DEVOPS_TASKS_METRICS_D_TY(rec.DAT, rec.STAT, rec.VALUE));
+      PIPE ROW (DEVOPS_TASKS_METRICS_D_TY(rec.DAT, rec.PKEY, rec.TYPE, rec.SUMMARY, rec.ISSUEID, rec.START_DATE,
+                                          rec.END_DATE,
+                                          rec.DURATION, rec.STAT, rec.VALUE));
     END LOOP;
     RETURN;
   END;
