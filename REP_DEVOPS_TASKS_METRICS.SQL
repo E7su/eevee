@@ -7,7 +7,7 @@
 CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_TY IS OBJECT (PKEY       VARCHAR2(255), TYPE VARCHAR2(255),
                                                           SUMMARY    VARCHAR2(255), ISSUEID VARCHAR2(255),
                                                           START_DATE DATE, END_DATE DATE, DURATION NUMBER,
-                                                          STAT       VARCHAR2(255), VALUE NUMBER);
+                                                          STAT       VARCHAR2(255), VALUE NUMBER, COUNTER NUMBER);
 CREATE OR REPLACE TYPE DEVOPS_TASKS_METRICS_TBL_TY IS TABLE OF DEVOPS_TASKS_METRICS_TY;
 
 CREATE OR REPLACE FUNCTION REP_DEVOPS_TASKS_METRICS(p_day NUMBER, p_end_day NUMBER, p_type VARCHAR2, p_st VARCHAR2,
@@ -87,7 +87,7 @@ IS
     FOR rec IN cur (p_day, p_end_day, p_type, p_st, p_end)
     LOOP
       PIPE ROW (DEVOPS_TASKS_METRICS_TY(rec.PKEY, rec.TYPE, rec.SUMMARY, rec.ISSUEID, rec.START_DATE, rec.END_DATE,
-                                        rec.DURATION, rec.STAT, rec.VALUE));
+                                        rec.DURATION, rec.STAT, rec.VALUE, rec.COUNTER));
     END LOOP;
     RETURN;
   END;
