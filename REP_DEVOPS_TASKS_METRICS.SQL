@@ -19,10 +19,11 @@ IS
     SELECT
       'AVERAGE'        STAT,
       AVG(rt.DURATION) VALUE
-    FROM (SELECT *
-          FROM
-            TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
+    FROM
+      (SELECT *
+       FROM TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
     UNION ALL
+
     -- Медиана
     SELECT
       'MEDIANA'  STAT,
@@ -30,21 +31,17 @@ IS
     FROM
       (SELECT ROUND(COUNT(rt.DURATION) / 2) COUNTER -- находит середину в списке длительностей
        FROM (SELECT *
-             FROM
-               TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt) t
+             FROM TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt) t
       JOIN (SELECT
-              -- сортирует по возрастанию
               ROWNUM RN,
               DURATION
             FROM
               (SELECT DURATION
                FROM
-                 (SELECT *
-                  FROM
-                    TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
-               ORDER BY DURATION)
+                 TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
            ) f ON f.RN = t.COUNTER
     UNION ALL
+
     -- 90ый перцентиль
     SELECT
       'PERCENTILE' STAT,
@@ -53,22 +50,19 @@ IS
       -- находит запись, где порядковый номер приблизительно равен 90% длины списка
       (SELECT ROUND(COUNT(rt.DURATION) / 100 * 90) COUNTER
        FROM (SELECT *
-             FROM
-               TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt) t
+             FROM TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt) t
       JOIN (SELECT
               ROWNUM RN,
               DURATION
             FROM
-              (SELECT DURATION -- сортирует по возрастанию
-               FROM
-                 (SELECT *
-                  FROM
-                    TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
-               ORDER BY DURATION)) f ON f.RN = t.COUNTER;
-  BEGIN
-    FOR rec IN cur (p_day, p_end_day, p_type, p_st, p_end)
-    LOOP
-      PIPE ROW (DEVOPS_TASKS_METRICS_TY(rec.STAT, rec.VALUE));
-    END LOOP;
-    RETURN;
-  END;
+              (SELECT DURATION
+               FROM TABLE (REP_DEVOPS_TASKS_DURATION(c_day, c_end_day, c_type, c_st, c_end))) rt
+           ) f ON f.RN = t.COUNTER;
+  
+BEGIN
+  FOR rec IN cur (p_day, p_end_day, p_type, p_st, p_end)
+  LOOP
+    PIPE ROW (DEVOPS_TASKS_METRICS_TY(rec.STAT, rec.VALUE));
+  END LOOP;
+  RETURN;
+END;
