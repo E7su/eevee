@@ -5,12 +5,24 @@
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS AS
   SELECT
     'SCRUM' AGILE,
-    scr.*
+    scr.TEAM,
+    scr.TYPE,
+    scr.TASK_SIZE,
+    scr.SUMMARY,
+    scr.ISSUENUM,
+    scr.START_DATE,
+    scr.END_DATE
   FROM
-    TABLE (REP_TASKS('10106', '10014', '10015')) scr -- 'To Do', 'TОDO' -> 'Done'
+    TABLE (JIRA_READER.REP_TASKS('10106', '10014', '10015')) scr -- 'To Do', 'TОDO' -> 'Done'
   UNION
   SELECT
     'KANBAN' AGILE,
-    knb.*
+    knb.TEAM,
+    knb.TYPE,
+    knb.TASK_SIZE,
+    knb.SUMMARY,
+    knb.ISSUENUM,
+    knb.START_DATE,
+    knb.END_DATE
   FROM
-    TABLE (REP_TASKS('11413', '10708', '11408')) knb -- 'Validation', 'Validation [IN PROGRESS]' -> 'Hot Support'
+    TABLE (JIRA_READER.REP_TASKS('11413', '10708', '11408')) knb -- 'Validation', 'Validation [IN PROGRESS]' -> 'Hot Support'
