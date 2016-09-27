@@ -13,51 +13,55 @@ PIPELINED
 IS
   CURSOR cur (c_st VARCHAR2, c_st_2 VARCHAR2, c_end VARCHAR2)
   IS
-    SELECT *
-    FROM (SELECT
-            t.TEAM,
-            t.TYPE,
-            t.TASK_SIZE,
-            t.SUMMARY,
-            t.ISSUENUM,
-            t.ISSUEID,
-            t.START_DATE,
-            d.END_DATE
-          FROM
-            (SELECT
-               cg.ISSUEID,
-               j.SUMMARY,
-               j.ISSUENUM,
-               tp.TEAM,
-               it.PNAME   TYPE,
-               vs.VALUE   TASK_SIZE,
-               cg.CREATED START_DATE -- дата перехода задачи в статус начала выполнения
-             FROM jira.JIRAISSUE j
-               JOIN jira.PROJECT p ON j.PROJECT = p.ID
-               JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
-               JOIN jira.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
-               JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
-               JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
-               JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
-               LEFT JOIN jira.ISSUELINK ln1 ON (j.ID = ln1.DESTINATION AND ln1.LINKTYPE = 10070)
-               LEFT JOIN jira.JIRAISSUE j2 ON (j2.ID = ln1.SOURCE AND j2.ISSUETYPE = 34)
-               JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp
-                 ON (tp.PROJECT = p.PNAME AND (tp.EPIC IS NULL OR tp.EPIC = j2.SUMMARY))
-             WHERE
-               ci.FIELD = 'status' AND
-               TO_CHAR(ci.NEWVALUE) = c_st OR TO_CHAR(ci.NEWVALUE) = c_st_2 --'10106', '10014'
-              --AND j.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
-            ) t
-            JOIN
-            (SELECT
-               cg.ISSUEID,
-               cg.CREATED END_DATE
-             FROM jira.CHANGEGROUP cg
-               JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
-             WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWVALUE) = c_end
-              -- AND j.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
-            ) d
-              ON d.ISSUEID = t.ISSUEID) n;
+    SELECT
+      t.TEAM,
+      t.TYPE,
+      t.TASK_SIZE,
+      t.SUMMARY,
+      t.ISSUENUM,
+      t.ISSUEID,
+      t.START_DATE,
+      d.END_DATE
+    FROM
+      (SELECT
+         cg.ISSUEID,
+         j.SUMMARY,
+         j.ISSUENUM,
+         tp.TEAM,
+         it.PNAME   TYPE,
+         vs.VALUE   TASK_SIZE,
+         cg.CREATED START_DATE -- дата перехода задачи в статус начала выполнения
+       FROM jira.JIRAISSUE j
+         JOIN jira.PROJECT p ON j.PROJECT = p.ID
+         JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
+         JOIN jira.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
+         JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
+         JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
+         JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
+         -- ищем эпик
+         LEFT JOIN jira.ISSUELINK ln1 ON (j.ID = ln1.DESTINATION AND ln1.LINKTYPE = 10070)
+         --epic
+         LEFT JOIN jira.JIRAISSUE j2 ON (j2.ID = ln1.SOURCE AND j2.ISSUETYPE = 34)
+         --получаем название эпика из кастомполя
+         LEFT JOIN jira.CUSTOMFIELDVALUE c1 ON (c1.ISSUE = j2.ID AND c1.CUSTOMFIELD = 10377)
+         JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp
+           ON (tp.PROJECT = p.PNAME AND
+               (tp.EPIC IS NULL OR tp.EPIC = j2.SUMMARY OR tp.EPIC = TO_CHAR(c1.STRINGVALUE)))
+       WHERE
+         ci.FIELD = 'status' AND
+         TO_CHAR(ci.NEWVALUE) = c_st OR TO_CHAR(ci.NEWVALUE) = c_st_2 --'10106', '10014'
+                                        AND cg.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
+      ) t
+      JOIN
+      (SELECT
+         cg.ISSUEID,
+         cg.CREATED END_DATE
+       FROM jira.CHANGEGROUP cg
+         JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
+       WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWVALUE) = c_end
+             AND cg.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
+      ) d
+        ON d.ISSUEID = t.ISSUEID;
   BEGIN
     FOR rec IN cur (p_st, p_st_2, p_end)
     LOOP
