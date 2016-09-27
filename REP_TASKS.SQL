@@ -39,7 +39,10 @@ IS
                JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
                JOIN V_SIZES vs ON cfv.STRINGVALUE = TO_CHAR(vs.ID)
                JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
-               JOIN V_STATIC_TEAMS_PROJECTS.SQL tp ON (tp.PROJECT = p.PNAME)
+               LEFT JOIN jira.ISSUELINK ln1 ON (j.ID = ln1.DESTINATION AND ln1.LINKTYPE = 10070)
+               LEFT JOIN jira.JIRAISSUE j2 ON (j2.ID = ln1.SOURCE AND j2.ISSUETYPE = 34)
+               JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp
+                 ON (tp.PROJECT = p.PNAME AND (tp.EPIC IS NULL OR tp.EPIC = j2.SUMMARY))
              WHERE
                ci.FIELD = 'status' AND
                TO_CHAR(ci.NEWVALUE) = c_st OR TO_CHAR(ci.NEWVALUE) = c_st_2 --'10106', '10014'
@@ -62,3 +65,4 @@ IS
     END LOOP;
     RETURN;
   END;
+  
