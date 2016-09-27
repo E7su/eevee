@@ -12,39 +12,32 @@
 --                        - size and problems in all sizes.
 
 --------------------------//09//--//10//--//11//------------------------------------
+
 CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
   SELECT DISTINCT
-    m.AGILE,
-    n.*,
-    m.DURATION,
-    m.QUANTITY -- количество внедрённых задач
+    n.AGILE,
+    n.TEAM,
+    n.TYPE,
+    n.TASK_SIZE,
+    n.SUMMARY,
+    n.ISSUENUM,
+    -- обработка случая, когда задача несколько раз переходила в статус завершения
+    -- берём дату последнего перехода
+    MAX(n.END_DATE) END_DATE,
+    MAX(n.DURATION) DURATION,
+    n.QUANTITY -- количество внедрённых задач
   FROM (SELECT
+          rt.AGILE,
           rt.TEAM,
           rt.TYPE,
           rt.TASK_SIZE,
           rt.SUMMARY,
           rt.ISSUENUM,
-          rt.END_DATE
-        FROM V_REP_TASKS rt
+          rt.END_DATE,
+          rt.END_DATE - rt.START_DATE DURATION,
+          1                           QUANTITY
+        FROM JIRA_READER.V_REP_TASKS rt
        ) n
-    JOIN
-    (SELECT
-       f.AGILE,
-       f.TEAM,
-       f.TYPE,
-       f.TASK_SIZE,
-       COUNT(f.TEAM)   QUANTITY,
-       SUM(f.DURATION) DURATION
-     FROM (SELECT
-             rt.AGILE,
-             rt.TEAM,
-             rt.TYPE,
-             rt.TASK_SIZE,
-             (rt.END_DATE -
-              rt.START_DATE) DURATION -- длительность задачи
-           FROM V_REP_TASKS rt
-          ) f
-     WHERE f.DURATION > 0
-     GROUP BY f.AGILE, f.TEAM, f.TYPE, f.TASK_SIZE) m
-      ON m.TEAM = n.TEAM AND m.TYPE = n.TYPE AND m.TASK_SIZE = n.TASK_SIZE
+  WHERE n.DURATION > 0
+  GROUP BY n.AGILE, n.TEAM, n.TYPE, n.TASK_SIZE, n.SUMMARY, n.ISSUENUM, n.QUANTITY
   ORDER BY 1, 2
