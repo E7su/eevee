@@ -21,15 +21,16 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
       SELECT
         j.ID                                                          EMPLOYEE_ID,-- ID сотрудника
         cg.CREATED                                                    DATE_CREATE,-- дата создания группы перемещений
-        CASE WHEN f.ID >= 10 THEN TO_DATE(ci.NEWSTRING, 'dd.mm.yyyy') ELSE NULL END DAY_ASSIGN, -- NULL или день перемещения
-        CASE WHEN f.ID <  10 THEN TO_CHAR(ci.NEWSTRING) ELSE NULL END TEAMS,      -- NULL или список команд
+        CASE WHEN FLOOR(f.ID/10) = 1 THEN TO_DATE(ci.NEWSTRING, 'dd.mm.yyyy') ELSE NULL END DAY_ASSIGN, -- NULL или день перемещения
+        CASE WHEN FLOOR(f.ID/10) = 0 THEN TO_CHAR(ci.NEWSTRING) ELSE NULL END TEAMS,      -- NULL или список команд
         cg.ID                                                         GROUP_ID    -- ID группы перемещений
       FROM JIRA.JIRAISSUE j
         JOIN JIRA.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
         JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
         JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD)
       WHERE
-        j.PROJECT = 12780
+        j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
+--       AND j.ID = 86093
     ) v
   GROUP BY
     v.GROUP_ID
@@ -40,10 +41,10 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
   -- выбор списка команд сотрудника, данные ему при устройстве на работу (многие - пустые)
   SELECT
     i.EMPLOYEE_ID         EMPLOYEE_ID,
-    i.DATE_CREATE   DATE_CREATE,
+    i.DATE_CREATE         DATE_CREATE,
     NULL                  DAY_ASSIGN,
     TO_CHAR(ci.OLDSTRING) TEAMS,
-    TRUNC(i.DATE_CREATE)   DAY_ASSIGN_RIGHT,
+    TRUNC(i.DATE_CREATE)  DAY_ASSIGN_RIGHT,
     cg.ID                 GROUP_ID
   FROM
     (
@@ -55,17 +56,51 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TEAMS_APPEND_FIELDS AS
       FROM JIRA.JIRAISSUE j
         JOIN JIRA.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
         JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
-        JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND f.ID < 10)
-        LEFT JOIN jira.CUSTOMFIELDVALUE c ON (c.ISSUE = j.ID AND c.CUSTOMFIELD = 12376) --дата приема на работу
+        JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND FLOOR(f.ID/10) = 0)
       WHERE
-        j.PROJECT = 12780
+        j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
+--         AND j.ID = 86093
       GROUP BY
         j.ID,
         j.CREATED
     ) i
     JOIN JIRA.CHANGEGROUP cg ON (cg.ID = i.GROUP_ID)
     JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
-    JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND f.ID < 10)
+    JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND FLOOR(f.ID/10) = 0)
+  WHERE
+    ci.OLDSTRING IS NOT NULL
+
+
+  UNION ALL
+
+  -- если сотрудник уволился, с даты увольнения он не числится ни в одной из команд
+  SELECT
+    i.EMPLOYEE_ID        EMPLOYEE_ID,
+    i.DATE_CREATE        DATE_CREATE,
+    NULL                 DAY_ASSIGN,
+    NULL                 TEAMS,
+    TRUNC(i.DATE_CREATE) DAY_ASSIGN_RIGHT,
+    cg.ID                GROUP_ID
+  FROM
+    (
+      -- выбор самой ранней группы изменений списка команд у сотрудника
+      SELECT
+        j.ID        EMPLOYEE_ID,
+        j.CREATED   DATE_CREATE, -- дата создания карточки сотрудника
+        MIN(cg.ID)  GROUP_ID
+      FROM JIRA.JIRAISSUE j
+        JOIN JIRA.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
+        JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
+        JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND FLOOR(f.ID/10) = 2)
+      WHERE
+        j.PROJECT = 12780 -- INNER JOIN jira.PROJECT p ON (j.PROJECT = p.ID AND p.PKEY = 'EMP')
+      --         AND j.ID = 86093
+      GROUP BY
+        j.ID,
+        j.CREATED
+    ) i
+    JOIN JIRA.CHANGEGROUP cg ON (cg.ID = i.GROUP_ID)
+    JOIN JIRA.CHANGEITEM ci ON (ci.GROUPID = cg.ID AND ci.FIELDTYPE = 'custom')
+    JOIN V_STATIC_TEAM_CHANGES_FIELDS f ON (f.FIELD = ci.FIELD AND FLOOR(f.ID/10) = 2)
   WHERE
     ci.OLDSTRING IS NOT NULL;
-;
