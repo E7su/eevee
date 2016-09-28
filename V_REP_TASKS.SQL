@@ -25,4 +25,4 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS AS
     knb.START_DATE,
     knb.END_DATE
   FROM
-    TABLE (JIRA_READER.REP_TASKS('11413', '10708', '11408')) knb -- 'Validation', 'Validation [IN PROGRESS]' -> 'Hot Support'
+    TABLE (JIRA_READER.REP_TASKS('10311', '10311', '10015')) knb -- 'Analysis [In Progress]', 'Analysis [In Progress]' -> 'Done'
