@@ -47,7 +47,7 @@ IS
             sd.START_DATE,
             ed.END_DATE
           FROM
-            (SELECT DISTINCT
+            (SELECT
                p.PKEY,
                cg.ISSUEID,
                j.CREATED,
@@ -58,7 +58,6 @@ IS
                JOIN jira.PROJECT p ON j.PROJECT = p.ID
                JOIN jira.ISSUETYPE it ON j.ISSUETYPE = it.ID
                JOIN jira.CHANGEGROUP cg ON (cg.ISSUEID = j.ID)
-               JOIN jira.CUSTOMFIELDVALUE cfv ON j.ID = cfv.ISSUE
                JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
              WHERE
                ci.FIELD = 'status'
@@ -91,3 +90,4 @@ IS
     END LOOP;
     RETURN;
   END;
+  
