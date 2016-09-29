@@ -25,14 +25,14 @@ IS
       'Первая половина' DAT,
       f.*
     FROM
-      TABLE (REP_DEVOPS_TASKS_METRICS('30', '15', c_type, c_st, c_end)) f -- 'In Progress' -> 'Done'
+      TABLE (REP_DEVOPS_TASKS_METRICS('30', '0', c_type, c_st, c_end)) f -- 'In Progress' -> 'Done'
     UNION ALL
     -- вторые две недели
     SELECT
       'Вторая половина' DAT,
       s.*
     FROM
-      TABLE (REP_DEVOPS_TASKS_METRICS('15', '0', c_type, c_st, c_end)) s; -- 'In Progress' -> 'Done'
+      TABLE (REP_DEVOPS_TASKS_METRICS('0', '0', c_type, c_st, c_end)) s; -- 'In Progress' -> 'Done'
   BEGIN
     FOR rec IN cur (p_type, p_st, p_end)
     LOOP
@@ -41,3 +41,4 @@ IS
     END LOOP;
     RETURN;
   END;
+  
