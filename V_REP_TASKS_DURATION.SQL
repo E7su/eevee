@@ -14,7 +14,17 @@
 --------------------------//09//--//10//--//11//------------------------------------
 
 CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
-  SELECT *
+  SELECT
+    nn.AGILE,
+    nn.TEAM,
+    nn.TYPE,
+    nn.TASK_SIZE,
+    nn.SUMMARY,
+    nn.ISSUENUM,
+    nn.END_DATE,
+    nn.DURATION,
+    nn.QUANTITY,
+    s.SCORE
   FROM
     (SELECT
        n.AGILE,
@@ -43,7 +53,9 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
      WHERE n.DURATION > 0
      GROUP BY n.AGILE, n.TEAM, n.TYPE, n.TASK_SIZE, n.SUMMARY, n.ISSUENUM, n.QUANTITY) nn
     JOIN (SELECT
+            -- вес задачи
             vs.SCORE,
+            -- размер задачи
             vs.VALUE
           FROM JIRA_READER.V_SIZES vs) s ON s.VALUE = nn.TASK_SIZE
   ORDER BY 1, 2
