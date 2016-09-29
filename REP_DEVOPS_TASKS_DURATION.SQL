@@ -20,7 +20,17 @@ IS
       inf.*,
       -- из длительности выполнения задачи вычитаем выходные и праздники
       -- coalesce нужен на случай, если это рабочий день
-      drt.DURATION - COALESCE(nwd.NOT_WORK_DAY, 0) DURATION
+      CASE
+      WHEN inf.TYPE = 'User Story'
+        THEN
+          drt.DURATION - COALESCE(nwd.NOT_WORK_DAY, 0)
+      WHEN inf.TYPE = 'DevOps Task'
+        THEN
+          -- из часов 24 часов в сутках вычесть 15 часов ночи, количество ночей = округление разности дат
+          drt.DURATION - COALESCE(nwd.NOT_WORK_DAY, 0) - (TRUNC(inf.END_DATE) - TRUNC(inf.START_DATE) - COALESCE(nwd.NOT_WORK_DAY, 0)) * 15 / 24
+      ELSE
+        0
+      END DURATION
     FROM
       (SELECT DISTINCT
          -- обогащение данными
@@ -62,7 +72,8 @@ IS
             ) d
        WHERE d.DURATION > 0
        GROUP BY d.ISSUEID
-      ) drt ON drt.ISSUEID = inf.ISSUEID OR drt.ISSUEID = nwd.ISSUEID;
+      ) drt ON drt.ISSUEID = inf.ISSUEID OR drt.ISSUEID = nwd.ISSUEID
+    ORDER BY DURATION;
   BEGIN
     FOR rec IN cur (p_day, p_end_day, p_type, p_st, p_end)
     LOOP
@@ -71,3 +82,4 @@ IS
     END LOOP;
     RETURN;
   END;
+  
