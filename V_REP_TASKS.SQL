@@ -13,7 +13,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS AS
     scr.START_DATE,
     scr.END_DATE
   FROM
-    TABLE (JIRA_READER.REP_TASKS('10106', '10014', '10015')) scr -- 'To Do', 'TОDO' -> 'Done'
+    TABLE (JIRA_READER.REP_TASKS(3, 3, 10015)) scr -- 'In Progress', 'In Progress' -> 'Done'
   UNION
   SELECT
     'KANBAN' AGILE,
@@ -25,4 +25,4 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS AS
     knb.START_DATE,
     knb.END_DATE
   FROM
-    TABLE (JIRA_READER.REP_TASKS('10311', '10311', '10015')) knb -- 'Analysis [In Progress]', 'Analysis [In Progress]' -> 'Done'
+    TABLE (JIRA_READER.REP_TASKS(10311, 10071, 10015)) knb -- 'Analysis [In Progress]', 'Analysis' -> 'Done'
