@@ -3,45 +3,57 @@
 -- Description:       Report (Graph):
 --                    KPI
 --                    the average quantity of defects found in production
+-- 
+--                    V_REP_BUGS_QUANTITY-> REP_BUGS_QUANTITY
 
 --------------------------------------//12//---------------------------------------
 ----------------------------------//числитель//------------------------------------
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
-  SELECT
-    ch.TEAM,
-    ch.PNAME                           PROJECT,
-    ROUND(ch.QUANTITY / zn.REGRESS, 2) KPI,
-    zn.REGRESS,
-    ch.QUANTITY
+  SELECT DISTINCT
+    -- on eazyBI ROUND(ch.QUANTITY / zn.REGRESS, 2) KPI
+    ch.PNAME PROJECT,
+    ch.BUG_NUM,
+    ch.BUG_SUMMARY,
+    ch.TEST_PHASE,
+    ch.QUANTITY,
+    zn.REGRESS_NUM,
+    zn.REGRESS_SUMMARY,
+    zn.REGRESS
   FROM
     (SELECT
-       tp.TEAM,
-       p.PNAME,
+       b.PNAME,
+       b.BUG_NUM,
+       b.BUG_SUMMARY,
+       b.TEST_PHASE,
+       ROWNUM BUG_ROW,
        -- количество багов, найденных в фазу тестирования Пром. эксплуатация
-       count(cf.CFNAME) QUANTITY
-     FROM JIRA.JIRAISSUE j
-       JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
-       LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME OR tp.TEAM = p.PNAME)
-       JOIN JIRA.CUSTOMFIELDVALUE cfv ON cfv.ISSUE = j.ID
-       JOIN JIRA.CUSTOMFIELD cf ON cf.ID = cfv.CUSTOMFIELD
-       JOIN JIRA.CUSTOMFIELDOPTION cfo ON cfv.STRINGVALUE = TO_CHAR(cfo.ID)
-     WHERE j.ISSUETYPE IN (1, 41) AND
-           -- [1]      Bug
-           -- [41]     Дефект мобильного приложения
-           cfv.CUSTOMFIELD = '11573' AND cfo.ID = '11848' AND -- 'Фаза тестирования' 'Пром. эксплуатация'
-           TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-08-01', 'yyyy-mm-dd'))
-     GROUP BY tp.TEAM, p.PNAME) ch
-    JOIN
+       1      QUANTITY
+     FROM
+       (SELECT *
+        FROM
+          -- first parameter - testing phase
+          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'X-MEN', 'X-MEN', 'X-MEN')) bh
+        UNION ALL
+        SELECT *
+        FROM
+          -- second parameter - project
+          TABLE (JIRA_READER.BUGS_QUANTITY(11848, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four')) bp
+        WHERE bp.priority = '2' -- critical
+       ) b
+    ) ch
+    LEFT JOIN
     -------------------------------//знаменатель//-----------------------------------
     (SELECT
-       tp.TEAM,
-       p.PNAME,
-       count(j.id) REGRESS
+       p.PNAME    PNAME,
+       j.ISSUENUM REGRESS_NUM,
+       j.SUMMARY  REGRESS_SUMMARY,
+       ROWNUM     REGRESS_ROW,
+       1          REGRESS
      FROM JIRA.JIRAISSUE j
        JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
        LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
        JOIN JIRA.LABEL Lb ON Lb.ISSUE = j.id
      WHERE j.ISSUETYPE = 3 AND
            -- [3]      Task
-           TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-08-01', 'yyyy-mm-dd')) AND LABEL = 'Регресс'
-     GROUP BY tp.TEAM, p.PNAME) zn ON ch.PNAME = zn.PNAME
+           TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-08-01', 'yyyy-mm-dd')) AND LABEL = 'Регресс') zn
+      ON ch.PNAME = zn.PNAME AND BUG_ROW = REGRESS_ROW
