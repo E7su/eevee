@@ -2,7 +2,7 @@
 -- Date of creation:  19.05.2016
 -- Description:       X-MEN HEADERS vacation
 
-CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
+CREATE OR REPLACE VIEW JIRA_READER.V_REP_X-MEN_HEADERS_HOLIDAY AS
   SELECT
     s.ФИО,
     -- обработка ситуации, когда отпуск попал на границу месяцев
@@ -36,12 +36,13 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
                ORDER BY tt.HOLIDAY_ORDER) HOLIDAY
            FROM
              (SELECT
-                ROWNUM HOLIDAY_ORDER,
+                ROWNUM                                                                          HOLIDAY_ORDER,
                 t.FIO,
                 t.RN,
-                t.HOLIDAY
+                '<a href="http://jira/browse/VAC-' || t.issuenum || '">' || t.HOLIDAY || '</a>' HOLIDAY
               FROM (SELECT
                       vac.FIO,
+                      vac.ISSUENUM,
                       -- в ячейку месяца начала отпуска
                       vac.RN_S RN,
                       CASE vac.END_DAY
@@ -62,7 +63,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
                               TO_CHAR(LAST_DAY(TO_DATE(vac.DATE_START, 'YYYY-MM-DD')), 'DD')
                          END)
                       END      HOLIDAY
-                    FROM JIRA_READER.V_REP_CITEB_HEADERS_DATES vac
+                    FROM JIRA_READER.V_REP_X-MEN_HEADERS_DATES vac
                     ORDER BY vac.FIO, vac.RN_E, vac.START_DAY
                    ) t
              ) tt
@@ -80,6 +81,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
                    FROM JIRA_READER.V_EMPLOYEES emp
                      JOIN (SELECT DISTINCT
                              v.FIO,
+                             -- TODO deprecated, switch to JIRA_READER.V_EMPLOYEES.EMPLOYEE
                              v.DATE_START,
                              v.DATE_END
                            FROM JIRA_READER.V_VACATIONS_CHANGES v
@@ -96,17 +98,19 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
     (SELECT *
      FROM
        (SELECT
-          tt.FIO ФИО,
+          tt.FIO                                                                           ФИО,
           tt.RN,
-          tt.HOLIDAY
+          '<a href="http://jira/browse/VAC-' || tt.issuenum || '">' || tt.HOLIDAY || '</a>' HOLIDAY
         FROM
           (SELECT
              ROWNUM HOLIDAY_ORDER,
              t.FIO,
              t.RN,
+             t.ISSUENUM,
              t.HOLIDAY
            FROM (SELECT
                    vac.FIO,
+                   vac.ISSUENUM,
                    -- в ячейку с месяцем окончания отпуска
                    vac.RN_E RN,
                    CASE vac.END_MONTH
@@ -114,10 +118,10 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_CITEB_HEADERS_HOLIDAY AS
                      -- дата удаляется, если отпуск длиной один день
                      THEN NULL
                    -- если попал на границу, то вторая часть отпуска была с первого дня месяца
-                   ELSE '01' || '-' || vac.END_DAY
+                   ELSE '1' || '-' || vac.END_DAY
                    END      HOLIDAY
                  FROM
-                   JIRA_READER.V_REP_CITEB_HEADERS_DATES vac
+                   JIRA_READER.V_REP_X-MEN_HEADERS_DATES vac
                 ) t
           ) tt
        )
