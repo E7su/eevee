@@ -40,8 +40,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_X-MEN_HEADERS_DATES AS
          --         AND vc.DATE_END < TRUNC(TO_DATE('$year_st' || '-12-31', 'yyyy-mm-dd')) AND
          --         e."Дата увольнения" IS NULL OR (TRUNC(TO_DATE(e."Дата увольнения", 'yyyy-mm-dd')) >=
          --                                         TRUNC(TO_DATE('$year_st' || '-01-01', 'yyyy-mm-dd'))))
-         AND vc.DATE_START > TRUNC(TO_DATE('2016-01-01', 'yyyy-mm-dd'))
-         AND vc.DATE_END < TRUNC(TO_DATE('2016-12-31', 'yyyy-mm-dd')) AND
+         AND vc.DATE_START > TRUNC(TO_DATE('2017-01-01', 'yyyy-mm-dd'))
+         AND vc.DATE_END < TRUNC(TO_DATE('2017-12-31', 'yyyy-mm-dd')) AND
          e."Дата увольнения" IS NULL OR (TRUNC(TO_DATE(e."Дата увольнения", 'yyyy-mm-dd')) >=
-                                         TRUNC(TO_DATE('2016-01-01', 'yyyy-mm-dd'))))
+                                         TRUNC(TO_DATE('2017-01-01', 'yyyy-mm-dd'))))
 --   ORDER BY vc.FIO
