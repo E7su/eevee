@@ -39,30 +39,34 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_X-MEN_HEADERS_HOLIDAY AS
                 ROWNUM                                                                          HOLIDAY_ORDER,
                 t.FIO,
                 t.RN,
+                -- ссылка на issue отпуска в jira
                 '<a href="http://jira/browse/VAC-' || t.issuenum || '">' || t.HOLIDAY || '</a>' HOLIDAY
               FROM (SELECT
                       vac.FIO,
                       vac.ISSUENUM,
                       -- в ячейку месяца начала отпуска
-                      vac.RN_S RN,
+                      vac.RN_S                                                                             RN,
                       CASE vac.END_DAY
+                      -- удаление даты начала, если отпуск длиной один день
                       WHEN vac.START_DAY
-                        THEN vac.END_DAY -- удаление даты начала, если отпуск длиной один день
+                        THEN vac.END_DAY
                       ELSE
                         -- а если отпуск не один день, то
-                        (CASE vac.END_MONTH
-                         -- если отпуск не попал на границу месяцов,
-                         -- то есть дата начала отпуска совпадает с датой конца,
+                        (CASE vac.START_MONTH
+                         -- если отпуск не попал на границу месяцев,
                          -- выводим через чёрточку время отпуска
-                         WHEN vac.START_MONTH
-                           THEN
-                             vac.START_DAY || '-' || vac.END_DAY
-                         -- если попал на границу, то пишем, что он был до последнего дня месяца
+                         WHEN vac.END_MONTH
+                           THEN vac.START_DAY || '-' || vac.END_DAY
                          -- а конец отпуска, который попал на другой месяц, подтягивается из нижней части джойна
-                         ELSE vac.START_DAY || '-' ||
-                              TO_CHAR(LAST_DAY(TO_DATE(vac.DATE_START, 'YYYY-MM-DD')), 'DD')
-                         END)
-                      END      HOLIDAY
+                         ELSE
+                           -- если первый день отпуска попал на последний день месяца, то выводим это число
+                           (CASE vac.START_DAY
+                            WHEN TO_CHAR(LAST_DAY(TO_DATE(vac.DATE_START, 'YYYY-MM-DD')), 'DD')
+                              THEN vac.START_DAY
+                            ELSE
+                              -- в противном случае выводим через черточку первый день отпуска и последний день месяца
+                              vac.START_DAY || '-' ||
+                              TO_CHAR(LAST_DAY(TO_DATE(vac.DATE_START, 'YYYY-MM-DD')), 'DD') END) END) END HOLIDAY
                     FROM JIRA_READER.V_REP_X-MEN_HEADERS_DATES vac
                     ORDER BY vac.FIO, vac.RN_E, vac.START_DAY
                    ) t
@@ -87,8 +91,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_X-MEN_HEADERS_HOLIDAY AS
                            FROM JIRA_READER.V_VACATIONS_CHANGES v
                            WHERE v.REASON_ID = '13040') vc
                        ON emp.SUMMARY = vc.FIO
-                   WHERE vc.DATE_START > TRUNC(TO_DATE('2016-01-01', 'YYYY-MM-DD'))
-                         AND vc.DATE_END < TRUNC(TO_DATE('2016-12-31', 'YYYY-MM-DD'))
+                   WHERE vc.DATE_START > TRUNC(TO_DATE('2017-01-01', 'YYYY-MM-DD'))
+                         AND vc.DATE_END < TRUNC(TO_DATE('2017-12-31', 'YYYY-MM-DD'))
                    ORDER BY FIO) fvac
              GROUP BY fvac.FIO
             ) i ON i.FIO = h.ФИО) s
@@ -98,7 +102,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_X-MEN_HEADERS_HOLIDAY AS
     (SELECT *
      FROM
        (SELECT
-          tt.FIO                                                                           ФИО,
+          tt.FIO                                                                            ФИО,
           tt.RN,
           '<a href="http://jira/browse/VAC-' || tt.issuenum || '">' || tt.HOLIDAY || '</a>' HOLIDAY
         FROM
@@ -118,7 +122,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_X-MEN_HEADERS_HOLIDAY AS
                      -- дата удаляется, если отпуск длиной один день
                      THEN NULL
                    -- если попал на границу, то вторая часть отпуска была с первого дня месяца
-                   ELSE '1' || '-' || vac.END_DAY
+                   ELSE '1-' || vac.END_DAY
                    END      HOLIDAY
                  FROM
                    JIRA_READER.V_REP_X-MEN_HEADERS_DATES vac
