@@ -60,7 +60,7 @@ IS
                              vac.START_DAY || '-' ||
                              TO_CHAR(LAST_DAY(TO_DATE(vac.DATE_START, 'YYYY-MM-DD')), 'DD') END) END) END HOLIDAY
                    FROM (SELECT *
-                         FROM TABLE (REP_X-MEN_HEADERS_DATES('$year_st'))) vac
+                         FROM TABLE (REP_X-MEN_HEADERS_DATES(c_year_st))) vac
                    ORDER BY vac.FIO, vac.RN_E, vac.START_DAY
                   ) sd
             ) sdh
@@ -114,7 +114,7 @@ IS
                   END      HOLIDAY
                 FROM
                   (SELECT *
-                   FROM TABLE (REP_X-MEN_HEADERS_DATES('$year_st'))) vac
+                   FROM TABLE (REP_X-MEN_HEADERS_DATES(c_year_st))) vac
                ) ed
          ) edh
       ) e ON s.ФИО = e.FIO;
