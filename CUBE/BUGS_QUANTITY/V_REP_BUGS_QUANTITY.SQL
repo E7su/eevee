@@ -1,59 +1,59 @@
 -- Author:            Polina Azarova
 -- Date of creation:  20.05.2016
--- Description:       Report (Graph):
---                    KPI
---                    the average quantity of defects found in production
--- 
---                    V_REP_BUGS_QUANTITY-> REP_BUGS_QUANTITY
+-- Description:       Data for KPI calculation
+--                    (the average quantity of defects found in production)
+--
+--                    V_REP_BUGS_QUANTITY -> REP_BUGS_QUANTITY
 
 --------------------------------------//12//---------------------------------------
-----------------------------------//числитель//------------------------------------
+-------------------------------------//BUG//---------------------------------------
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
   SELECT DISTINCT
-    -- on eazyBI ROUND(ch.QUANTITY / zn.REGRESS, 2) KPI
     ch.PNAME PROJECT,
-    ch.BUG_NUM,
-    ch.BUG_SUMMARY,
+    ch.NUM,
+    ch.SUMMARY,
     ch.TEST_PHASE,
-    ch.QUANTITY,
-    zn.REGRESS_NUM,
-    zn.REGRESS_SUMMARY,
-    zn.REGRESS
+    ch.TYPE,
+    ch.PRIORITY,
+    ch.CREATED
   FROM
     (SELECT
-       b.PNAME,
-       b.BUG_NUM,
-       b.BUG_SUMMARY,
-       b.TEST_PHASE,
-       ROWNUM BUG_ROW,
-       -- количество багов, найденных в фазу тестирования Пром. эксплуатация
-       1      QUANTITY
+       b.PNAME       PNAME,
+       b.BUG_NUM     NUM,
+       b.BUG_SUMMARY SUMMARY,
+       b.TEST_PHASE  TEST_PHASE,
+       'Bug'         TYPE,
+       b.PRIORITY    PRIORITY,
+       b.CREATED     CREATED
      FROM
        (SELECT *
         FROM
-          -- first parameter - testing phase
-          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'X-MEN', 'X-MEN', 'X-MEN')) bh
+          -- first parameter - testing phase:
+          -- 13745 'hot support'
+          -- 11848 'Пром. эксплуатация'
+          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four')) bh
         UNION ALL
         SELECT *
         FROM
           -- second parameter - project
-          TABLE (JIRA_READER.BUGS_QUANTITY(11848, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four')) bp
-        WHERE bp.priority = '2' -- critical
+          TABLE (JIRA_READER.BUGS_QUANTITY(11848, 'X-MEN', 'X-MEN', 'X-MEN')) bp
+        WHERE bp.PRIORITY = 'Critical' OR bp.PRIORITY = 'Major'
        ) b
-    ) ch
-    LEFT JOIN
-    -------------------------------//знаменатель//-----------------------------------
-    (SELECT
-       p.PNAME    PNAME,
-       j.ISSUENUM REGRESS_NUM,
-       j.SUMMARY  REGRESS_SUMMARY,
-       ROWNUM     REGRESS_ROW,
-       1          REGRESS
+     UNION ALL
+     --------------------------------//REGRESS//-----------------------------------
+     SELECT
+       p.PNAME             PNAME,
+       TO_CHAR(j.ISSUENUM) NUM,
+       j.SUMMARY           SUMMARY,
+       NULL                TEST_PHASE,
+       'Regress'           TYPE,
+       NULL                PRIORITY,
+       TO_CHAR(j.CREATED)  CREATED
      FROM JIRA.JIRAISSUE j
        JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
        LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
-       JOIN JIRA.LABEL Lb ON Lb.ISSUE = j.id
+       JOIN JIRA.LABEL Lb ON Lb.ISSUE = j.ID
      WHERE j.ISSUETYPE = 3 AND
            -- [3]      Task
-           TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-08-01', 'yyyy-mm-dd')) AND LABEL = 'Регресс') zn
-      ON ch.PNAME = zn.PNAME AND BUG_ROW = REGRESS_ROW
+           TRUNC(j.CREATED) >= TRUNC(TO_DATE('2016-08-01', 'yyyy-mm-dd')) AND LABEL = 'Регресс') ch
+  ORDER BY 1, 5, 7
