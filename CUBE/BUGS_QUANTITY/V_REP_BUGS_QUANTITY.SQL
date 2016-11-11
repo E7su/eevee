@@ -16,7 +16,8 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
     ch.TYPE,
     ch.PRIORITY,
     ch.CREATED,
-    1 QUANTITY
+    ch.BUG,
+    ch.REGRESS
   FROM
     (SELECT
        b.PNAME       PROJECT,
@@ -25,14 +26,16 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
        b.TEST_PHASE  TEST_PHASE,
        'Bug'         TYPE,
        b.PRIORITY    PRIORITY,
-       b.CREATED     CREATED
+       b.CREATED     CREATED,
+       1             BUG,
+       NULL          REGRESS
      FROM
        (SELECT *
         FROM
           -- first parameter - testing phase:
           -- 13745 'hot support'
           -- 11848 'Пром. эксплуатация'
-          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four')) bh
+          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four'))) bh
         UNION ALL
         SELECT *
         FROM
@@ -49,7 +52,9 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
        NULL                TEST_PHASE,
        'Regress'           TYPE,
        NULL                PRIORITY,
-       TO_CHAR(j.CREATED)  CREATED
+       TO_CHAR(j.CREATED)  CREATED,
+       NULL                BUG,
+       1                   REGRESS
      FROM JIRA.JIRAISSUE j
        JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
        LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME)
