@@ -18,13 +18,14 @@ IS
       j.ISSUENUM      BUG_NUM,
       j.SUMMARY       BUG_SUMMARY,
       cfo.CUSTOMVALUE TEST_PHASE,
-      j.PRIORITY
+      pr.PNAME        PRIORITY
     FROM JIRA.JIRAISSUE j
       JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
       LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME OR tp.TEAM = p.PNAME)
       JOIN JIRA.CUSTOMFIELDVALUE cfv ON cfv.ISSUE = j.ID
       JOIN JIRA.CUSTOMFIELD cf ON cf.ID = cfv.CUSTOMFIELD
       JOIN JIRA.CUSTOMFIELDOPTION cfo ON cfv.STRINGVALUE = TO_CHAR(cfo.ID)
+      LEFT JOIN JIRA.PRIORITY pr ON j.PRIORITY = pr.ID
     WHERE j.ISSUETYPE IN (1, 41) AND
           -- [1]      Bug
           -- [41]     Дефект мобильного приложения
