@@ -4,7 +4,7 @@
 
 CREATE OR REPLACE TYPE BUGS_QUANTITY_TY IS OBJECT (PNAME       VARCHAR2(255), BUG_NUM VARCHAR2(255),
                                                    BUG_SUMMARY VARCHAR2(255), TEST_PHASE VARCHAR2(255),
-                                                   PRIORITY    VARCHAR2(255));
+                                                   PRIORITY    VARCHAR2(255), CREATED VARCHAR2(255));
 CREATE OR REPLACE TYPE BUGS_QUANTITY_TBL_TY IS TABLE OF BUGS_QUANTITY_TY;
 
 CREATE OR REPLACE FUNCTION BUGS_QUANTITY(phase NUMBER, proj_1 VARCHAR2, proj_2 VARCHAR2, proj_3 VARCHAR2)
@@ -18,7 +18,8 @@ IS
       j.ISSUENUM      BUG_NUM,
       j.SUMMARY       BUG_SUMMARY,
       cfo.CUSTOMVALUE TEST_PHASE,
-      pr.PNAME        PRIORITY
+      pr.PNAME        PRIORITY,
+      j.CREATED CREATED
     FROM JIRA.JIRAISSUE j
       JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
       LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME OR tp.TEAM = p.PNAME)
@@ -39,7 +40,7 @@ IS
     LOOP
       PIPE ROW (BUGS_QUANTITY_TY(rec.PNAME, rec.BUG_NUM,
                                  rec.BUG_SUMMARY, rec.TEST_PHASE,
-                                 rec.PRIORITY));
+                                 rec.PRIORITY, rec.CREATED));
     END LOOP;
     RETURN;
   END;
