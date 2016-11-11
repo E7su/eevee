@@ -9,16 +9,17 @@
 -------------------------------------//BUG//---------------------------------------
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
   SELECT DISTINCT
-    ch.PNAME PROJECT,
+    ch.PROJECT,
     ch.NUM,
     ch.SUMMARY,
     ch.TEST_PHASE,
     ch.TYPE,
     ch.PRIORITY,
-    ch.CREATED
+    ch.CREATED,
+    1 QUANTITY
   FROM
     (SELECT
-       b.PNAME       PNAME,
+       b.PNAME       PROJECT,
        b.BUG_NUM     NUM,
        b.BUG_SUMMARY SUMMARY,
        b.TEST_PHASE  TEST_PHASE,
