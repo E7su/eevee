@@ -13,17 +13,17 @@ PIPELINED
 IS
   CURSOR cur (c_year_st VARCHAR2)
   IS
-    SELECT d.*, i.Итого
+    SELECT
+      d.ФИО                            ФИО,
+      d.RN                             RN,
+      -- выведет значения через запятую
+      REPLACE(d.HOLIDAY, '><', '>, <') HOLIDAY,
+      i.Итого                          Итого
     FROM
       (SELECT
-         COALESCE(s.FIO, e.FIO)        ФИО,
-         COALESCE(s.RN, e.RN)          RN,
-         e.HOLIDAY || ' ' || s.HOLIDAY HOLIDAY -- TODO сделать через запятую
-       --      CASE e.HOLIDAY
-       --      WHEN NULL
-       --        THEN NULL
-       --      ELSE e.HOLIDAY || ', '
-       --      END                    HOLIDAY
+         COALESCE(s.FIO, e.FIO) ФИО,
+         COALESCE(s.RN, e.RN)   RN,
+         e.HOLIDAY || s.HOLIDAY HOLIDAY
        FROM
          (SELECT
             sdh.FIO                       FIO,
@@ -128,7 +128,7 @@ IS
                      FROM JIRA_READER.V_VACATIONS_CHANGES v
                      WHERE v.REASON_ID = '13040') vc
                  ON emp.SUMMARY = vc.FIO
-             WHERE vc.DATE_START > TRUNC(TO_DATE(c_year_st|| '-01-01', 'YYYY-MM-DD'))
+             WHERE vc.DATE_START > TRUNC(TO_DATE(c_year_st || '-01-01', 'YYYY-MM-DD'))
                    AND vc.DATE_END < TRUNC(TO_DATE(c_year_st || '-12-31', 'YYYY-MM-DD'))
              ORDER BY FIO) fvac
        GROUP BY fvac.FIO
@@ -165,3 +165,4 @@ FROM
    IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)) d
 ORDER BY 1
 */
+
