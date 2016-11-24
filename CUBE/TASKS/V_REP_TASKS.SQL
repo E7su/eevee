@@ -25,4 +25,19 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_TASKS AS
     knb.START_DATE,
     knb.END_DATE
   FROM
-    TABLE (JIRA_READER.REP_TASKS(10311, 10071, 10015)) knb -- 'Analysis [In Progress]', 'Analysis' -> 'Done'
+    TABLE (JIRA_READER.REP_TASKS(10311, 10071, 10015)) knb -- 'Validation', 'Validation [IN PROGRESS]' -> 'Hot Support'
+  UNION
+  SELECT *
+  FROM
+    (SELECT
+       'SUPER' AGILE,
+       amb.TEAM,
+       amb.TYPE,
+       amb.TASK_SIZE,
+       amb.SUMMARY,
+       amb.ISSUENUM,
+       amb.START_DATE,
+       amb.END_DATE
+     FROM
+       TABLE (JIRA_READER.REP_TASKS(3, 3, 5)) amb
+     WHERE TEAM IN ('X-MEN', 'The Guardians of the Galaxy', 'The Avengers')) am -- 'In Progress', 'In Progress' -> 'Resolved'
