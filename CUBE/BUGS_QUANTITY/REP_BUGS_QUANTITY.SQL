@@ -2,10 +2,9 @@
 -- Date of creation:  27.10.2016
 -- Description:       V_REP_BUGS_QUANTITY-> REP_BUGS_QUANTITY
 
-CREATE OR REPLACE TYPE BUGS_QUANTITY_TY IS OBJECT (PNAME      VARCHAR2(255), TEAM VARCHAR2(255),
-                                                   BUG_NUM    VARCHAR2(255), BUG_SUMMARY VARCHAR2(255),
-                                                   TEST_PHASE VARCHAR2(255), PRIORITY VARCHAR2(255),
-                                                   CREATED    VARCHAR2(255));
+CREATE OR REPLACE TYPE BUGS_QUANTITY_TY IS OBJECT (PNAME       VARCHAR2(255), BUG_NUM VARCHAR2(255),
+                                                   BUG_SUMMARY CLOB, TEST_PHASE VARCHAR2(255),
+                                                   PRIORITY    VARCHAR2(255), CREATED VARCHAR2(255));
 CREATE OR REPLACE TYPE BUGS_QUANTITY_TBL_TY IS TABLE OF BUGS_QUANTITY_TY;
 
 CREATE OR REPLACE FUNCTION BUGS_QUANTITY(phase NUMBER, proj_1 VARCHAR2, proj_2 VARCHAR2, proj_3 VARCHAR2)
@@ -15,13 +14,12 @@ IS
   CURSOR cur (phase VARCHAR2, proj_1 VARCHAR2, proj_2 VARCHAR2, proj_3 VARCHAR2)
   IS
     SELECT
-      p.PNAME         PNAME,
-      tp.TEAM         TEAM,
-      j.ISSUENUM      BUG_NUM,
-      j.SUMMARY       BUG_SUMMARY,
-      cfo.CUSTOMVALUE TEST_PHASE,
-      pr.PNAME        PRIORITY,
-      j.CREATED       CREATED
+      p.PNAME            PNAME,
+      j.ISSUENUM         BUG_NUM,
+      TO_CHAR(j.SUMMARY) BUG_SUMMARY,
+      cfo.CUSTOMVALUE    TEST_PHASE,
+      pr.PNAME           PRIORITY,
+      j.CREATED          CREATED
     FROM JIRA.JIRAISSUE j
       JOIN JIRA.PROJECT p ON j.PROJECT = p.ID
       LEFT JOIN JIRA_READER.V_STATIC_TEAMS_PROJECTS tp ON (tp.PROJECT = p.PNAME OR tp.TEAM = p.PNAME)
@@ -40,7 +38,7 @@ IS
   BEGIN
     FOR rec IN cur (phase, proj_1, proj_2, proj_3)
     LOOP
-      PIPE ROW (BUGS_QUANTITY_TY(rec.PNAME, rec.TEAM, rec.BUG_NUM,
+      PIPE ROW (BUGS_QUANTITY_TY(rec.PNAME, rec.BUG_NUM,
                                  rec.BUG_SUMMARY, rec.TEST_PHASE,
                                  rec.PRIORITY, rec.CREATED));
     END LOOP;
