@@ -3,7 +3,7 @@
 -- Description:       Function for refactoring V_REP_TASKS_DURATION
 
 CREATE OR REPLACE TYPE TASKS_TY IS OBJECT (TEAM       VARCHAR2(255), TYPE VARCHAR2(255), TASK_SIZE VARCHAR2(255),
-                                           SUMMARY    VARCHAR2(255), ISSUENUM VARCHAR2(255),
+                                           SUMMARY    CLOB, ISSUENUM VARCHAR2(255), ISSUEID VARCHAR2(255),
                                            START_DATE DATE, END_DATE DATE);
 CREATE OR REPLACE TYPE TASKS_TBL_TY IS TABLE OF TASKS_TY;
 
@@ -13,15 +13,15 @@ PIPELINED
 IS
   CURSOR cur (c_st VARCHAR2, c_st_2 VARCHAR2, c_end VARCHAR2)
   IS
-    SELECT DISTINCT
+    SELECT
       t.TEAM,
       t.TYPE,
       t.TASK_SIZE,
       t.SUMMARY,
       t.ISSUENUM,
       t.ISSUEID,
-      t.START_DATE,
-      d.END_DATE
+      MIN(t.START_DATE) START_DATE,
+      MAX(d.END_DATE)   END_DATE
     FROM
       (SELECT
          cg.ISSUEID,
@@ -56,7 +56,7 @@ IS
                (tp.SPRINT IS NULL OR sp.NAME LIKE tp.SPRINT))
        WHERE
          ci.FIELD = 'status' AND
-         (TO_CHAR(ci.NEWVALUE) = c_st OR TO_CHAR(ci.NEWVALUE) = c_st_2) -- '10106', '10014'
+         (TO_CHAR(ci.NEWVALUE) = c_st OR TO_CHAR(ci.NEWVALUE) = c_st_2)  -- '10106', '10014'
          AND cg.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
       ) t
       JOIN
@@ -65,14 +65,16 @@ IS
          cg.CREATED END_DATE
        FROM jira.CHANGEGROUP cg
          JOIN jira.CHANGEITEM ci ON (ci.GROUPID = cg.ID)
-       WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWVALUE) = c_end
+       WHERE ci.FIELD = 'status' AND TO_CHAR(ci.NEWVALUE) = c_end  -- '10015'
              AND cg.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
       ) d
-        ON d.ISSUEID = t.ISSUEID;
+        ON d.ISSUEID = t.ISSUEID
+    GROUP BY t.TEAM, t.TYPE, t.TASK_SIZE, t.SUMMARY, t.ISSUENUM, t.ISSUEID;
   BEGIN
     FOR rec IN cur (p_st, p_st_2, p_end)
     LOOP
-      PIPE ROW (TASKS_TY(rec.TEAM, rec.TYPE, rec.TASK_SIZE, rec.SUMMARY, rec.ISSUENUM, rec.START_DATE, rec.END_DATE));
+      PIPE ROW (TASKS_TY(rec.TEAM, rec.TYPE, rec.TASK_SIZE, rec.SUMMARY, rec.ISSUENUM, rec.ISSUEID,
+                         rec.START_DATE, rec.END_DATE));
     END LOOP;
     RETURN;
   END;
