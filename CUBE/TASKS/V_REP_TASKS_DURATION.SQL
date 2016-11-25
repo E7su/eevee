@@ -13,17 +13,23 @@
 
 --------------------------//09//--//10//--//11//------------------------------------
 CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
-  SELECT DISTINCT
+  SELECT
     m.AGILE,
-    n.*,
+    n.TEAM,
+    n.TYPE,
+    n.TASK_SIZE,
+    n.SUMMARY,
+    n.ISSUENUM,
+    n.END_DATE,
     m.DURATION,
-    m.QUANTITY -- количество внедрённых задач
+    1 QUANTITY -- количество внедрённых задач
   FROM (SELECT
           rt.TEAM,
           rt.TYPE,
           rt.TASK_SIZE,
           rt.SUMMARY,
           rt.ISSUENUM,
+          rt.ISSUEID,
           rt.END_DATE
         FROM JIRA_READER.V_REP_TASKS rt
        ) n
@@ -33,18 +39,18 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
        f.TEAM,
        f.TYPE,
        f.TASK_SIZE,
-       COUNT(f.TEAM)   QUANTITY,
-       MAX(f.DURATION) DURATION
+       f.ISSUEID,
+       f.DURATION DURATION
      FROM (SELECT
              rt.AGILE,
              rt.TEAM,
              rt.TYPE,
              rt.TASK_SIZE,
+             rt.ISSUEID,
              (rt.END_DATE -
               rt.START_DATE) DURATION -- длительность задачи
            FROM JIRA_READER.V_REP_TASKS rt
           ) f
-     WHERE f.DURATION > 0
-     GROUP BY f.AGILE, f.TEAM, f.TYPE, f.TASK_SIZE) m
-      ON m.TEAM = n.TEAM AND m.TYPE = n.TYPE AND m.TASK_SIZE = n.TASK_SIZE
+     WHERE f.DURATION > 0) m
+      ON m.ISSUEID = n.ISSUEID
   ORDER BY 1, 2
