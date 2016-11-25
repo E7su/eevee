@@ -10,6 +10,7 @@
 CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
   SELECT DISTINCT
     ch.PROJECT,
+    ch.TEAM,
     ch.NUM,
     ch.SUMMARY,
     ch.TEST_PHASE,
@@ -21,6 +22,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
   FROM
     (SELECT
        b.PNAME       PROJECT,
+       b.PNAME       TEAM,
        b.BUG_NUM     NUM,
        b.BUG_SUMMARY SUMMARY,
        b.TEST_PHASE  TEST_PHASE,
@@ -30,14 +32,26 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
        1             BUG,
        NULL          REGRESS
      FROM
-       (SELECT *
+       (SELECT
+          PNAME,
+          BUG_NUM,
+          TO_CHAR(BUG_SUMMARY) BUG_SUMMARY,
+          TEST_PHASE,
+          PRIORITY,
+          CREATED
         FROM
           -- first parameter - testing phase:
           -- 13745 'hot support'
           -- 11848 'Пром. эксплуатация'
-          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four'))) bh
+          TABLE (JIRA_READER.BUGS_QUANTITY(13745, 'The Guardians of the Galaxy', 'The Avengers', 'Fantastic Four')) bh
         UNION ALL
-        SELECT *
+        SELECT
+          PNAME,
+          BUG_NUM,
+          TO_CHAR(BUG_SUMMARY) BUG_SUMMARY,
+          TEST_PHASE,
+          PRIORITY,
+          CREATED
         FROM
           -- second parameter - project
           TABLE (JIRA_READER.BUGS_QUANTITY(11848, 'X-MEN', 'X-MEN', 'X-MEN')) bp
@@ -47,6 +61,7 @@ CREATE OR REPLACE VIEW JIRA_READER.V_REP_BUGS_QUANTITY AS
      --------------------------------//REGRESS//-----------------------------------
      SELECT
        p.PNAME             PNAME,
+       tp.TEAM             TEAM,
        TO_CHAR(j.ISSUENUM) NUM,
        j.SUMMARY           SUMMARY,
        NULL                TEST_PHASE,
