@@ -2,9 +2,9 @@
 -- Date of creation:  27.07.2016
 -- Description:       Function for refactoring V_REP_TASKS_DURATION
 
-CREATE OR REPLACE TYPE TASKS_TY IS OBJECT (TEAM       VARCHAR2(255), TYPE VARCHAR2(255), TASK_SIZE VARCHAR2(255),
-                                           SUMMARY    CLOB, ISSUENUM VARCHAR2(255), ISSUEID VARCHAR2(255),
-                                           START_DATE DATE, END_DATE DATE);
+CREATE OR REPLACE TYPE TASKS_TY IS OBJECT (TEAM    VARCHAR2(255), TYPE VARCHAR2(255), TASK_SIZE VARCHAR2(255),
+                                           SUMMARY CLOB, ISSUENUM VARCHAR2(255), ISSUEID VARCHAR2(255),
+                                           SCORE   VARCHAR2(255), START_DATE DATE, END_DATE DATE);
 CREATE OR REPLACE TYPE TASKS_TBL_TY IS TABLE OF TASKS_TY;
 
 CREATE OR REPLACE FUNCTION REP_TASKS(p_st VARCHAR2, p_st_2 VARCHAR2, p_end VARCHAR2)
@@ -20,6 +20,7 @@ IS
       t.SUMMARY,
       t.ISSUENUM,
       t.ISSUEID,
+      t.SCORE,
       MIN(t.START_DATE) START_DATE,
       MAX(d.END_DATE)   END_DATE
     FROM
@@ -30,6 +31,7 @@ IS
          tp.TEAM,
          it.PNAME   TYPE,
          vs.VALUE   TASK_SIZE,
+         vs.SCORE,
          cg.CREATED START_DATE -- дата перехода задачи в статус начала выполнения
        FROM jira.JIRAISSUE j
          JOIN jira.PROJECT p ON j.PROJECT = p.ID
@@ -69,12 +71,13 @@ IS
              AND cg.CREATED > TO_DATE('2016-01-01', 'yyyy-mm-dd')
       ) d
         ON d.ISSUEID = t.ISSUEID
-    GROUP BY t.TEAM, t.TYPE, t.TASK_SIZE, t.SUMMARY, t.ISSUENUM, t.ISSUEID;
+    GROUP BY t.TEAM, t.TYPE, t.TASK_SIZE, t.SUMMARY, t.ISSUENUM, t.ISSUEID, t.SCORE;
   BEGIN
     FOR rec IN cur (p_st, p_st_2, p_end)
     LOOP
-      PIPE ROW (TASKS_TY(rec.TEAM, rec.TYPE, rec.TASK_SIZE, rec.SUMMARY, rec.ISSUENUM, rec.ISSUEID,
-                         rec.START_DATE, rec.END_DATE));
+      PIPE ROW (TASKS_TY(rec.TEAM, rec.TYPE, rec.TASK_SIZE,
+                         rec.SUMMARY, rec.ISSUENUM, rec.ISSUEID,
+                         rec.SCORE, rec.START_DATE, rec.END_DATE));
     END LOOP;
     RETURN;
   END;
