@@ -20,6 +20,7 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
     n.TASK_SIZE,
     n.SUMMARY,
     n.ISSUENUM,
+    n.SCORE,
     n.END_DATE,
     m.DURATION,
     1 QUANTITY -- количество внедрённых задач
@@ -30,7 +31,8 @@ CREATE OR REPLACE VIEW V_REP_TASKS_DURATION AS
           rt.SUMMARY,
           rt.ISSUENUM,
           rt.ISSUEID,
-          rt.END_DATE
+          rt.END_DATE,
+          rt.SCORE
         FROM JIRA_READER.V_REP_TASKS rt
        ) n
     JOIN
