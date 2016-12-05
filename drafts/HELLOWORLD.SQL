@@ -1,0 +1,6 @@
+SET SERVEROUTPUT ON
+BEGIN
+DBMS_OUTPUT.enable;
+DBMS_OUTPUT.put_line('Hello World!!!');
+END;
+/
