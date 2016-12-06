@@ -1,3 +1,11 @@
+-- Author:            Polina Azarova
+-- Date of creation:  08.07.2016
+-- Description:       A report on the turnover ratio for the selected period in the context of administration,
+--                    registration ( state / vendor )
+
+--                    V_REP_TURNOVER_RATIO -> V_REP_AVG_TURNOVER -> V_REP_HEADCOUNT
+
+--------------------------------------//14//---------------------------------------
 CREATE OR REPLACE VIEW V_REP_AVG_TURNOVER AS
   WITH dates (D) AS (
     SELECT TO_DATE('2015-12-01', 'YYYY-MM-DD') AS D
