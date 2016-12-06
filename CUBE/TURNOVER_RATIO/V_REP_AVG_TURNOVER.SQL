@@ -1,0 +1,34 @@
+CREATE OR REPLACE VIEW V_REP_AVG_TURNOVER AS
+  WITH dates (D) AS (
+    SELECT TO_DATE('2015-12-01', 'YYYY-MM-DD') AS D
+    FROM dual -- //start
+    UNION ALL
+    SELECT ADD_MONTHS(D, 1) AS D
+    FROM dates
+    WHERE D < TO_DATE('2016-12-01', 'YYYY-MM-DD') -- end//
+  )
+  SELECT
+    h.D,
+    h.DEPARTMENT,
+    h.REGISTRATION,
+    h.AVG_TURNOVER,
+    d.DISMISS
+  FROM
+    (SELECT
+       dates.D,
+       h.DEPARTMENT,
+       h.REGISTRATION,
+       SUM(h.HEADCOUNT) / MONTHS_BETWEEN(dates.D, TO_DATE('2015-12-01', 'YYYY-MM-DD') + 1) AVG_TURNOVER
+     FROM dates
+       LEFT JOIN V_REP_HEADCOUNT h ON h.DAT <= dates.D
+     GROUP BY DEPARTMENT, REGISTRATION, D) h
+    LEFT JOIN
+    (SELECT
+       dates.D,
+       h.DEPARTMENT,
+       h.REGISTRATION,
+       SUM(h.DISMISS) DISMISS
+     FROM dates
+       LEFT JOIN V_REP_HEADCOUNT h ON h.DAT <= dates.D
+     GROUP BY DEPARTMENT, REGISTRATION, D) d
+      ON h.D = d.D AND h.REGISTRATION = d.REGISTRATION AND h.DEPARTMENT = d.DEPARTMENT
