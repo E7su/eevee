@@ -16,9 +16,9 @@ CREATE OR REPLACE VIEW V_REP_HEADCOUNT AS
     WHERE D < TO_DATE('2016-12-01', 'YYYY-MM-DD') -- end//
   )
   SELECT
-    h.DEPARTMENT,
-    h.REGISTRATION,
-    h.DAT,
+    NVL(d.DEPARTMENT, h.DEPARTMENT)     DEPARTMENT,
+    NVL(d.REGISTRATION, h.REGISTRATION) REGISTRATION,
+    NVL(d.DAT, h.DAT)                   DAT,
     h.HEADCOUNT,
     d.DISMISS
   FROM
@@ -45,7 +45,7 @@ CREATE OR REPLACE VIEW V_REP_HEADCOUNT AS
        LEFT JOIN JIRA_READER.V_EMPLOYEES_SHORT dem
          ON (dates.D >= dem."Дата приёма" AND
              dem."Дата увольнения" >= dates.D
-             AND dem."Дата увольнения" <= dates.D + TO_CHAR(LAST_DAY(TO_DATE(dates.D, 'YYYY-MM-DD')), 'DD')
+             AND dem."Дата увольнения" <= dates.D + TO_CHAR(LAST_DAY(dates.D), 'DD')
          )
      WHERE dem."Оформление" IN ('Штат', 'Вентра')
      GROUP BY dates.D, dem."Подразделение", dem."Оформление") d
