@@ -8,7 +8,7 @@
 --------------------------------------//14//---------------------------------------
 CREATE OR REPLACE VIEW V_REP_AVG_TURNOVER AS
   WITH dates (D) AS (
-    SELECT TO_DATE('2015-12-01', 'YYYY-MM-DD') AS D
+    SELECT TO_DATE('2016-01-01', 'YYYY-MM-DD') AS D
     FROM dual -- //start
     UNION ALL
     SELECT ADD_MONTHS(D, 1) AS D
@@ -17,8 +17,8 @@ CREATE OR REPLACE VIEW V_REP_AVG_TURNOVER AS
   )
   SELECT
     h.D,
-    h.DEPARTMENT,
-    h.REGISTRATION,
+    NVL(h.DEPARTMENT, d.DEPARTMENT)     DEPARTMENT,
+    NVL(h.REGISTRATION, d.REGISTRATION) REGISTRATION,
     h.AVG_TURNOVER,
     d.DISMISS
   FROM
