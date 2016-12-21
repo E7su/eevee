@@ -8,24 +8,24 @@
 --------------------------------------//14//---------------------------------------
 CREATE OR REPLACE VIEW V_REP_TURNOVER_RATIO AS
   SELECT
-    NVL(at.D, ds.D)                       D,
-    NVL(at.REGISTRATION, ds.REGISTRATION) REG,
-    NVL(at.DEPARTMENT, ds.DEPARTMENT)     DEP,
+    NVL(at.D, ds.D)     D,
+    NVL(at.REG, ds.REG) REG,
+    NVL(at.DEP, ds.DEP) DEP,
     at.AVG_TURNOVER,
-    ds.DISMISS,
-    DISMISS / AVG_TURNOVER * 100          TURNOVER_RATIO
+    ds.DISMISS --,
+  --     DISMISS / AVG_TURNOVER * 100 TURNOVER_RATIO в eazyBI
   FROM (SELECT
-          A.D,
-          A.DEPARTMENT,
-          A.REGISTRATION,
-          A.AVG_TURNOVER
-        FROM V_REP_AVG_TURNOVER A) AT
+          a.D,
+          a.DEP,
+          a.REG,
+          a.AVG_TURNOVER
+        FROM V_REP_AVG_TURNOVER a) at
     LEFT JOIN
     (SELECT
-       A.D,
-       A.DEPARTMENT,
-       A.REGISTRATION,
-       A.DISMISS
-     FROM V_REP_AVG_TURNOVER A) ds
-      ON AT.REGISTRATION = ds.REGISTRATION AND AT.DEPARTMENT = ds.DEPARTMENT AND AT.D = ds.D
-  WHERE AT.D > TO_DATE('2015-12-01', 'YYYY-MM-DD')
+       a.D,
+       a.DEP,
+       a.REG,
+       a.DISMISS
+     FROM V_REP_AVG_TURNOVER a) ds
+      ON at.REG = ds.REG AND at.DEP = ds.DEP AND at.D = ds.D
+  WHERE at.D > TO_DATE('2015-12-01', 'YYYY-MM-DD')
