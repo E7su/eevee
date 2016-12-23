@@ -3,10 +3,10 @@
 -- Description:       A report on the turnover ratio for the selected period in the context of administration,
 --                    registration ( state / vendor )
 
---                    V_REP_TURNOVER_RATIO -> V_REP_AVG_TURNOVER -> V_REP_HEADCOUNT
+--                    V_RTR_TURNOVER_RATIO -> V_RTR_TURNOVER_AVG -> V_RTR_DISMISS
 
 --------------------------------------//14//---------------------------------------
-CREATE OR REPLACE VIEW V_REP_TURNOVER_RATIO AS
+CREATE OR REPLACE VIEW V_RTR_TURNOVER_RATIO AS
   SELECT
     NVL(at.D, ds.D)     D,
     NVL(at.REG, ds.REG) REG,
@@ -19,13 +19,13 @@ CREATE OR REPLACE VIEW V_REP_TURNOVER_RATIO AS
           a.DEP,
           a.REG,
           a.AVG_TURNOVER
-        FROM V_REP_AVG_TURNOVER a) at
+        FROM V_RTR_TURNOVER_AVG a) at
     LEFT JOIN
     (SELECT
        a.D,
        a.DEP,
        a.REG,
        a.DISMISS
-     FROM V_REP_AVG_TURNOVER a) ds
+     FROM V_RTR_TURNOVER_AVG a) ds
       ON at.REG = ds.REG AND at.DEP = ds.DEP AND at.D = ds.D
   WHERE at.D > TO_DATE('2015-12-01', 'YYYY-MM-DD')
