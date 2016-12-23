@@ -3,10 +3,10 @@
 -- Description:       A report on the turnover ratio for the selected period in the context of administration,
 --                    registration ( state / vendor )
 
---                    V_REP_TURNOVER_RATIO -> V_REP_AVG_TURNOVER -> V_REP_HEADCOUNT
+--                    V_RTR_TURNOVER_RATIO -> V_RTR_TURNOVER_AVG -> V_RTR_DISMISS
 
 --------------------------------------//14//---------------------------------------
-CREATE OR REPLACE VIEW V_REP_HEADCOUNT AS
+CREATE OR REPLACE VIEW V_RTR_DISMISS AS
   WITH dates (D) AS (
     SELECT TO_DATE('2015-12-01', 'YYYY-MM-DD') AS D
     FROM dual -- //start
