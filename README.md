@@ -36,4 +36,5 @@
                                                         `""
                                                         
 ## Architecture
-![](https://github.com/E7su/eevee/blob/master/screen/eevee_3.png?raw=true)
+![](https://github.com/E7su/eevee/blob/master/screen/eevee_5.png?raw=true)
+![](https://github.com/E7su/eevee/blob/master/screen/eevee_6.png?raw=true)
