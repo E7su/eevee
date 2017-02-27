@@ -1,5 +1,5 @@
 CREATE OR REPLACE VIEW JIRA_READER.V_EQ_RESOLUTION AS
-  SELECT
+  SELECT DISTINCT
     FIO,
     ASSIGNEE,
     SUMMARY,
@@ -7,12 +7,13 @@ CREATE OR REPLACE VIEW JIRA_READER.V_EQ_RESOLUTION AS
     DUEDATE,
     RESOLUTIONDATE,
     CASE
-    WHEN DIFF < 0
+    WHEN DIFF >= 0
       THEN 1
-    ELSE NULL
-    END BAD_COUNTER,
-    ALL_COUNTER,
-    COMPONENT
+    ELSE 0
+    END GOOD_COUNTER,
+    1 ALL_COUNTER,
+    COMPONENT,
+    ISSUETYPE
   FROM (
     SELECT
       emp.ФИО                             AS FIO,
@@ -22,12 +23,13 @@ CREATE OR REPLACE VIEW JIRA_READER.V_EQ_RESOLUTION AS
       j.DUEDATE,
       j.RESOLUTIONDATE,
       j.DUEDATE - TRUNC(j.RESOLUTIONDATE) AS DIFF,
-      1                                      ALL_COUNTER,
       j.PROJECT,
       na.SINK_NODE_ID                        COMPONENT_ID,
-      comp.CNAME                             COMPONENT
+      comp.CNAME                             COMPONENT,
+      iss.PNAME                              ISSUETYPE
     FROM JIRA.JIRAISSUE j
       JOIN V_EMPLOYEES_FULL emp ON LOWER(emp."Логин") = j.ASSIGNEE
+      JOIN JIRA.ISSUETYPE iss ON iss.ID = j.ISSUETYPE
       JOIN JIRA.NODEASSOCIATION na
         ON na.SOURCE_NODE_ID = j.ID
            AND na.SINK_NODE_ENTITY = 'Component'
