@@ -1,11 +1,11 @@
-CREATE OR REPLACE VIEW JIRA_READER.V_CALENDAR_CELEBRATION AS
+CREATE OR REPLACE VIEW V_CALENDAR_CELEBRATION AS
   SELECT
     TO_CHAR('2016-01-01') DAT,
-    
-    '0'                   CELEBRATION_TRIGGER, -- триггер праздника (если праздник, то 0), если не праздник -- <null>
-    
-    NULL                  CARRY_TRIGGER  -- триггер переноса рабочего дня на выходной
-                                         -- если перенос произошёл, то 1,  если нет переноса -- <null>
+    '0'                   CELEBRATION_TRIGGER,
+    -- триггер праздника (если праздник, то 0), если не праздник -- <null>
+    NULL                  CARRY_TRIGGER
+  -- триггер переноса рабочего дня на выходной
+  -- если перенос произошёл, то 1,  если нет переноса -- <null>
   FROM dual
   UNION ALL
   SELECT
@@ -96,4 +96,85 @@ CREATE OR REPLACE VIEW JIRA_READER.V_CALENDAR_CELEBRATION AS
     '2016-02-20' DAT,
     NULL,
     '1'
-  FROM dual;
+  FROM dual
+
+  --//2017//--
+
+  UNION ALL
+  SELECT
+    '2017-01-02' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-01-03' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-01-04' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-01-05' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-01-06' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-02-23' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-02-24' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-03-08' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-05-01' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-05-08' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-05-09' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-06-12' DAT,
+    NULL,
+    '0'
+  FROM dual
+  UNION ALL
+  SELECT
+    '2017-11-06' DAT,
+    NULL,
+    '0'
+  FROM dual
